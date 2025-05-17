@@ -236,29 +236,166 @@ def run_resume_optimizer(job_description: str):
 
     try:
         results = crew.kickoff()
-        print("Task 4 Output (Optimized Resume JSON):")
-        # print(results.tasks_output[3]['name'])  # Print Task 4 output for debugging
+        
+        # Get the task outputs directly
+        resume_parser_output = results.tasks_output[0]  # Task 1 output
+        jd_parser_output = results.tasks_output[1]      # Task 2 output
+        ats_scorer_output = results.tasks_output[2]     # Task 3 output
+        resume_optimizer_output = results.tasks_output[3]  # Task 4 output
+        resume_latex_output = results.tasks_output[4]   # Task 5 output
+        cover_letter_output = results.tasks_output[5]   # Task 6 output
+        
 
-            # Access TaskOutput data correctly
-        optimized_resume_output = results.tasks_output[4]  # Task 4: Optimized resume JSON
-        cover_letter_output = results.tasks_output[5]      # Task 6: Cover letter LaTeX
-
-        # Extract JSON data from TaskOutput
+        print("\n=== Task Outputs ===")
+        print(f"Resume Parser Output Type: {type(resume_parser_output)}")
+        print(f"Resume Optimizer Output Type: {type(resume_optimizer_output)}")
+        print(f"Resume LaTeX Output Type: {type(resume_latex_output)}")
+        print(f"Cover Letter Output Type: {type(cover_letter_output)}")
+        
+        # Extract optimized resume JSON
         try:
-            # If raw is a string, parse it as JSON; if it's already a dict, use it directly
-            if isinstance(optimized_resume_output.raw, str):
-                optimized_resume_json = json.loads(optimized_resume_output.raw)
+            # Try to parse as JSON if it's a string
+            if isinstance(resume_optimizer_output, str):
+                # Look for JSON object in the string
+                json_match = re.search(r'\{.*\}', resume_optimizer_output, re.DOTALL)
+                if json_match:
+                    optimized_resume_json = json.loads(json_match.group(0))
+                else:
+                    optimized_resume_json = json.loads(resume_optimizer_output)
+            elif hasattr(resume_optimizer_output, 'raw'):
+                # If it's a TaskOutput object
+                raw_data = resume_optimizer_output.raw
+                if isinstance(raw_data, str):
+                    json_match = re.search(r'\{.*\}', raw_data, re.DOTALL)
+                    if json_match:
+                        optimized_resume_json = json.loads(json_match.group(0))
+                    else:
+                        optimized_resume_json = json.loads(raw_data)
+                else:
+                    # Already a dict
+                    optimized_resume_json = raw_data
             else:
-                optimized_resume_json = optimized_resume_output.raw
+                # Assume it's already a dict
+                optimized_resume_json = resume_optimizer_output
+                
+            print(f"Successfully extracted optimized resume JSON")
+            
         except (json.JSONDecodeError, AttributeError) as e:
             print(f"Error parsing optimized resume JSON: {e}")
-            return
+            print(f"Raw resume optimizer output: {resume_optimizer_output}")
+            # Fall back to parsing the initial resume
+            try:
+                if isinstance(resume_parser_output, str):
+                    json_match = re.search(r'\{.*\}', resume_parser_output, re.DOTALL)
+                    if json_match:
+                        optimized_resume_json = json.loads(json_match.group(0))
+                    else:
+                        optimized_resume_json = json.loads(resume_parser_output)
+                elif hasattr(resume_parser_output, 'raw'):
+                    raw_data = resume_parser_output.raw
+                    if isinstance(raw_data, str):
+                        json_match = re.search(r'\{.*\}', raw_data, re.DOTALL)
+                        if json_match:
+                            optimized_resume_json = json.loads(json_match.group(0))
+                        else:
+                            optimized_resume_json = json.loads(raw_data)
+                    else:
+                        optimized_resume_json = raw_data
+                else:
+                    optimized_resume_json = resume_parser_output
+                print(f"Using original parsed resume JSON as fallback")
+            except Exception as e2:
+                print(f"Error parsing original resume JSON: {e2}")
+                # Create a basic empty resume JSON as last resort
+                optimized_resume_json = {
+                    "name": "Candidate",
+                    "email": "example@email.com",
+                    "phone": "123-456-7890",
+                    "skills": [],
+                    "education": [],
+                    "experience": []
+                }
+                print(f"Using empty resume JSON template as last resort")
 
-        # Extract LaTeX string from TaskOutput
-        cover_letter_latex = cover_letter_output.raw if hasattr(cover_letter_output, 'raw') else str(cover_letter_output)
+        # Get resume LaTeX content
+        if isinstance(resume_latex_output, str):
+            resume_latex = resume_latex_output
+        elif hasattr(resume_latex_output, 'raw'):
+            resume_latex = resume_latex_output.raw
+        else:
+            # Generate from JSON if LaTeX output is not available
+            resume_latex = resume_json_to_latex(optimized_resume_json)
+            
+        # Extract LaTeX from task output if it doesn't look like LaTeX
+        if not resume_latex.strip().startswith("\\documentclass"):
+            # Look for LaTeX code in the string
+            latex_match = re.search(r'\\documentclass.*\\end\{document\}', resume_latex, re.DOTALL)
+            if latex_match:
+                resume_latex = latex_match.group(0)
+            else:
+                # Generate from JSON if LaTeX extraction failed
+                resume_latex = resume_json_to_latex(optimized_resume_json)
 
-        # Generate LaTeX resume
-        resume_latex = resume_json_to_latex(optimized_resume_json)
+        # Get cover letter LaTeX content
+        if isinstance(cover_letter_output, str):
+            cover_letter_latex = cover_letter_output
+        elif hasattr(cover_letter_output, 'raw'):
+            cover_letter_latex = cover_letter_output.raw
+        else:
+            # Create a basic cover letter if output is not available
+            company_name = extract_company_name(job_description)
+            cover_letter_latex = f"""\\documentclass{{letter}}
+\\usepackage[margin=1in]{{geometry}}
+\\usepackage{{hyperref}}
+\\begin{{document}}
+
+\\address{{{optimized_resume_json.get('name', 'Candidate')}\\\\
+{optimized_resume_json.get('email', 'example@email.com')}\\\\
+{optimized_resume_json.get('phone', '123-456-7890')}}}
+
+\\begin{{letter}}{{Hiring Manager\\\\{company_name}}}
+
+\\opening{{Dear Hiring Manager,}}
+
+I am writing to express my interest in the Software Engineer position at {company_name}. 
+Please find my resume attached for your consideration.
+
+\\closing{{Sincerely,}}
+
+\\end{{letter}}
+\\end{{document}}
+"""
+            
+        # Extract LaTeX from task output if it doesn't look like LaTeX
+        if not cover_letter_latex.strip().startswith("\\documentclass"):
+            # Look for LaTeX code in the string
+            latex_match = re.search(r'\\documentclass.*\\end\{document\}', cover_letter_latex, re.DOTALL)
+            if latex_match:
+                cover_letter_latex = latex_match.group(0)
+            else:
+                # Use the basic cover letter
+                company_name = extract_company_name(job_description)
+                cover_letter_latex = f"""\\documentclass{{letter}}
+\\usepackage[margin=1in]{{geometry}}
+\\usepackage{{hyperref}}
+\\begin{{document}}
+
+\\address{{{optimized_resume_json.get('name', 'Candidate')}\\\\
+{optimized_resume_json.get('email', 'example@email.com')}\\\\
+{optimized_resume_json.get('phone', '123-456-7890')}}}
+
+\\begin{{letter}}{{Hiring Manager\\\\{company_name}}}
+
+\\opening{{Dear Hiring Manager,}}
+
+I am writing to express my interest in the Software Engineer position at {company_name}. 
+Please find my resume attached for your consideration.
+
+\\closing{{Sincerely,}}
+
+\\end{{letter}}
+\\end{{document}}
+"""
 
         # Save outputs
         os.makedirs("output", exist_ok=True)
@@ -271,10 +408,12 @@ def run_resume_optimizer(job_description: str):
         with open(cover_letter_file, "w") as f:
             f.write(cover_letter_latex)
 
-        print(f"\n✅ Saved:\n{resume_file}\n{cover_letter_file}")
+        print(f"\n✅ Successfully saved:\n{resume_file}\n{cover_letter_file}")
 
     except Exception as e:
         print(f"Error during crew execution: {e}")
+        import traceback
+        traceback.print_exc()
 
 # Example usage
 if __name__ == '__main__':
@@ -297,7 +436,7 @@ if __name__ == '__main__':
     Updating and improving existing software to enhance performance and functionality.
     Analysing and addressing technical challenges to find effective solutions.
     Recommend ideas on how the product can be developed and improved to enhance performance and usability.
-    The skills you’ll need:
+    The skills you'll need:
 
     Experience in a full stack Web-based software development role.
     Use of PHP Laravel, TypeScript/JavaScript and React.
@@ -316,7 +455,7 @@ if __name__ == '__main__':
 
     We offer a range of exceptional benefits to support your wellbeing and work-life balance, including a comprehensive Health Cash Plan, Private Medical Insurance and Employee Assistance Programme, along with a generous parental leave package and the ability to buy or sell holiday each year. We also offer the option of working overseas for up to 8 weeks per year. You'll also have access to E-Learning Opportunities to enhance your skills, Volunteer Days to give back to your community and access to Achievers, our reward and recognition platform, to ensure you can thrive both personally and professionally in a supportive and rewarding environment.
 
-    We’re committed to creating an environment that enables employees to balance their responsibilities inside and outside of work and encourage and support a range of flexible working patterns for all colleagues. If you need flexibility, apply and discuss your needs with us.
+    We're committed to creating an environment that enables employees to balance their responsibilities inside and outside of work and encourage and support a range of flexible working patterns for all colleagues. If you need flexibility, apply and discuss your needs with us.
 
     Criminal Records and Security Checks
 
