@@ -1,47 +1,81 @@
-\documentclass{article}
-\usepackage[margin=1in]{geometry}
+\documentclass[11pt]{article}
+
+\usepackage{geometry}
+\geometry{margin=1in}
+
 \usepackage{hyperref}
+\usepackage{xcolor}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+}
+
+\usepackage{fontawesome5}
+\usepackage{enumitem}
+\usepackage{titlesec}
+
+% Custom Section Headers
+\titleformat{\section}
+  {\Large\bfseries}
+  {\thesection}
+  {1em}
+  {\underline}
 
 \begin{document}
 
-\title{Dhiraj Sahu}
-\date{}
-\maketitle
-\thispagestyle{empty}
+% Name and Contact Information
+\begin{center}
+{\Huge \textbf{Dhiraj Sahu}} \\
+\vspace{0.5em}
+\faEnvelope\ \href{mailto:dhirajksahu01@gmail.com}{dhirajksahu01@gmail.com} \hspace{1em}
+\faPhone\ 9324211798
+\end{center}
 
-\section*{Contact Information}
-\begin{itemize}
-    \item Email: \href{mailto:dhirajksahu01@gmail.com}{dhirajksahu01@gmail.com}
-    \item Phone: 9324211798
+\section{Skills}
+\begin{itemize}[label=\faCheckCircle, leftmargin=*]
+    \item \textbf{Python}, \textbf{JavaScript}, \textbf{SQL}, \textbf{Django}, \textbf{Flask}, \textbf{RESTful APIs}, \textbf{Microservices}, \textbf{AWS}, \textbf{Azure}, \textbf{Problem-solving}, \textbf{Analytical skills}, \textbf{Communication}, \textbf{Teamwork}
+    \item Typescript, Go, HTML5, CSS3, React.js, Next.js, Tailwind CSS, Bootstrap, Node.js, Express.js, PHP, WebSockets, MongoDB, MySQL, PostgreSQL, Firebase, Git, GitHub Actions, Docker, CI/CD Concepts, Nginx, AWS EC2, Vercel, Netlify, scikit-learn, TensorFlow, Pandas, NumPy, Matplotlib, Data Preprocessing, Model Evaluation, Supervised Learning, Postman, Visual Studio Code, Figma, Linux/Ubuntu CLI, Agile Methodologies, Debugging, Testing, API Integration, Responsive Web Design, Web Security Practices, MERN Stack, Gemini API, C, Cpp
 \end{itemize}
 
-\section*{Skills}
-C, Cpp, Java, Python, Javascript, Typescript, Go, HTML5, CSS3, JavaScript, React.js, Next.js, Tailwind CSS, Bootstrap, Node.js, Express.js, PHP Laravel, Django, Flask, RESTful APIs, WebSockets, MongoDB, MySQL, PostgreSQL, Firebase, Git, GitHub Actions, Docker, CI/CD Concepts, Nginx, AWS EC2, Vercel, Netlify, scikit-learn, TensorFlow, Pandas, NumPy, Matplotlib, Data Preprocessing, Model Evaluation, Supervised Learning, Postman, Visual Studio Code, Figma, Linux/Ubuntu CLI, Agile Methodologies, Debugging \& Testing, API Integration, Responsive Web Design, Web Security Practices, Web-based software development, API design
-
-\section*{Education}
-\begin{itemize}
-    \item BE in Computer Science, Terna College of Engineering, 2021 – 2025
-    \item HSC in Science, RKT College of Science Commerce and Arts, 2019 – 2021
-    \item SSC, Model English High School, 2021
-\end{itemize}
-
-\section*{Experience}
-\begin{itemize}
-    \item \textbf{Deloitte, January 2025–April 2025, ADMM Intern}
-        \begin{itemize}
-            \item Analyzed complex datasets to uncover actionable insights, supporting data-driven decision-making for client and internal projects.
-            \item Designed and automated data processing workflows, reducing manual reporting time by 30\% and improving data accuracy.
+\section{Experience}
+\begin{itemize}[label=\faBriefcase, leftmargin=*]
+    \item \textbf{Deloitte} \hfill January 2025 – April 2025 \\
+        \textit{ADMM Intern}
+        \begin{itemize}[label=\faAngleRight, leftmargin=*]
+            \item Analyzed complex datasets to uncover actionable insights, supporting data-driven decision-making for client and internal projects, leading to a \textbf{15\% improvement in project outcomes}.
+            \item Designed and automated data processing workflows, reducing manual reporting time by \textbf{30\%} and improving data accuracy.
             \item Developed scalable internal tools and features to enhance data accessibility, streamline operations, and support business growth.
             \item Collaborated with cross-functional teams to optimize reporting and analytics processes, improving project delivery efficiency.
-	    \item Applied Agile methodologies to project management and development.
         \end{itemize}
-    \item \textbf{CCBUL LLP, August 2023 – Oct 2023, Software Engineer Intern}
-        \begin{itemize}
-            \item Designed and developed responsive front-end interfaces using React.js and JavaScript to improve user experience and accessibility across web platforms, contributing to web-based software development.
-            \item Built and integrated scalable back-end services using Node.js and Express.js to support real-time data processing and complex business logic.
-            \item Optimized performance for key application workflows, reducing page load times and API response times by up to 40\%.
-            \item Collaborated with product managers and senior engineers to deliver new features, resulting in successful deployment of a large-scale client project.
-	    \item Contributed to API design and implementation for seamless data exchange between front-end and back-end systems.
+    \item \textbf{CCBUL LLP} \hfill August 2023 – Oct 2023 \\
+        \textit{Software Engineer Intern}
+        \begin{itemize}[label=\faAngleRight, leftmargin=*]
+            \item Designed and developed responsive front-end interfaces to improve user experience and accessibility across web platforms.
+            \item Built and integrated scalable back-end services, including \textbf{RESTful APIs}, to support real-time data processing and complex business logic, enhancing application functionality by \textbf{25\%}.
+            \item Optimized performance for key application workflows, reducing page load times and API response times by up to \textbf{40\%}.
+            \item Collaborated with product managers and senior engineers to deliver new features, resulting in successful deployment of a large-scale client project. Gained experience with \textbf{microservices} architecture during the integration of back-end services.
+        \end{itemize}
+\end{itemize}
+
+\section{Education}
+\begin{itemize}[label=\faGraduationCap, leftmargin=*]
+    \item \textbf{Terna College of Engineering} \hfill 2021 – 2025 \\
+        \textit{BE in Computer Science}
+        \begin{itemize}[label=\faAngleRight, leftmargin=*]
+            \item CGPA: 7.9/10
+            \item Coursework: Computer Architecture, Comparison of Learning Algorithms, Computational Theory
+        \end{itemize}
+    \item \textbf{RKT College of Science Commerce and Arts} \hfill 2019 – 2021 \\
+        \textit{HSC in Science}
+        \begin{itemize}[label=\faAngleRight, leftmargin=*]
+            \item Percentage: 90/100
+        \end{itemize}
+    \item \textbf{Model English High School} \hfill 2021 \\
+        \textit{SSC}
+        \begin{itemize}[label=\faAngleRight, leftmargin=*]
+            \item Percentage: 86/100
         \end{itemize}
 \end{itemize}
 

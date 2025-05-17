@@ -1,6 +1,7 @@
 import os
 import re
 import json
+import subprocess
 from crewai import Agent, Task, Crew, LLM
 from pdfminer.high_level import extract_text
 from dotenv import load_dotenv
@@ -14,29 +15,76 @@ llm = LLM(
 )
 
 def extract_company_name(jd_text: str) -> str:
-    match = re.search(r'\b(at|@)\s+([A-Z][\w& ]+)', jd_text, re.IGNORECASE)
-    return match.group(2).strip().replace(" ", "_") if match else "company"
+    """Extract company name from job description with improved pattern matching."""
+    # Try to match company name patterns like "at Company", "@ Company", "with Company"
+    patterns = [
+        r'\b(at|@)\s+([A-Z][\w& ]+)',
+        r'position\s+(at|with)\s+([A-Z][\w& ]+)',
+        r'(job|role|opportunity)\s+(at|with)\s+([A-Z][\w& ]+)',
+        r'([A-Z][A-Za-z0-9]+([\s&]+[A-Z][A-Za-z0-9]+)*)\s+is\s+(looking|hiring|seeking)',
+    ]
+    
+    for pattern in patterns:
+        match = re.search(pattern, jd_text, re.IGNORECASE)
+        if match:
+            groups = match.groups()
+            # Return the company name (last group in each pattern)
+            return groups[-1].strip().replace(" ", "_")
+    
+    return "Company"  # Default fallback
 
 def resume_json_to_latex(resume_json: dict) -> str:
+    """Convert resume JSON to LaTeX format with improved formatting."""
+    # Format skills with better spacing
     skills = ', '.join(resume_json.get("skills", []))
-    education = '\n'.join(resume_json.get("education", []))
-    experience = '\n'.join([f"{exp['role']} at {exp['company']}, {exp['year']}\n{exp['responsibilities']}" for exp in resume_json.get("experience", [])])
+    
+    # Format education with better structure
+    education_items = resume_json.get("education", [])
+    education = '\n\\begin{itemize}\n' + \
+                '\n'.join([f'\\item {edu}' for edu in education_items]) + \
+                '\n\\end{itemize}' if education_items else 'No education information available.'
+    
+    # Format experience with better structure and formatting
+    experience_items = resume_json.get("experience", [])
+    if experience_items:
+        experience = ''
+        for exp in experience_items:
+            experience += f"\\subsection*{{{exp.get('role', 'Role')} at {exp.get('company', 'Company')}, {exp.get('year', 'Year')}}}\n"
+            experience += "\\begin{itemize}\n"
+            # Split responsibilities into bullet points if they contain semicolons or periods
+            responsibilities = exp.get('responsibilities', '')
+            resp_items = re.split(r'[;.]\s+', responsibilities)
+            resp_items = [r.strip() for r in resp_items if r.strip()]
+            
+            for resp in resp_items:
+                if resp and not resp.endswith('.'):
+                    resp += '.'
+                experience += f"\\item {resp}\n"
+            experience += "\\end{itemize}\n"
+    else:
+        experience = 'No experience information available.'
 
     return f"""
 \\documentclass{{article}}
 \\usepackage[margin=1in]{{geometry}}
 \\usepackage{{hyperref}}
+\\usepackage{{enumitem}}
+\\usepackage{{fontawesome5}}
+\\usepackage{{titlesec}}
+\\usepackage{{color}}
+\\definecolor{{linkcolor}}{{HTML}}{{0066cc}}
+\\hypersetup{{colorlinks=true, linkcolor=linkcolor, urlcolor=linkcolor}}
+
+\\titleformat{{\\section}}{{\\Large\\bfseries\\color{{linkcolor}}}}{{}}{{0em}}{{\\underline}}
+
 \\begin{{document}}
 
-\\title{{Resume - {resume_json.get('name', 'Candidate')}}}
-\\author{{{resume_json.get('name', 'Candidate')}}}
-\\date{{}}
+\\begin{{center}}
+\\textbf{{\\Huge {resume_json.get('name', 'Candidate')}}}
 
-\\maketitle
-
-\\section*{{Contact Information}}
-Email: {resume_json.get('email', 'N/A')} \\\\
-Phone: {resume_json.get('phone', 'N/A')}
+\\vspace{{0.5em}}
+\\faEnvelope\\ {resume_json.get('email', 'N/A')} \\quad \\faPhone\\ {resume_json.get('phone', 'N/A')}
+\\end{{center}}
 
 \\section*{{Skills}}
 {skills}
@@ -50,62 +98,117 @@ Phone: {resume_json.get('phone', 'N/A')}
 \\end{{document}}
 """
 
+def compile_latex_to_pdf(tex_file_path):
+    """Compile LaTeX file to PDF using pdflatex."""
+    try:
+        # Get the directory containing the tex file
+        directory = os.path.dirname(tex_file_path)
+        
+        # Run pdflatex command (twice to ensure references are resolved)
+        subprocess.run(
+            ['pdflatex', '-interaction=nonstopmode', tex_file_path],
+            cwd=directory,
+            check=True,
+            capture_output=True
+        )
+        subprocess.run(
+            ['pdflatex', '-interaction=nonstopmode', tex_file_path],
+            cwd=directory,
+            check=True,
+            capture_output=True
+        )
+        
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"Error compiling {tex_file_path}: {e}")
+        print(f"pdflatex output: {e.stdout.decode('utf-8', errors='ignore')}")
+        print(f"pdflatex error: {e.stderr.decode('utf-8', errors='ignore')}")
+        return False
+    except Exception as e:
+        print(f"Unexpected error compiling {tex_file_path}: {e}")
+        return False
+
 def run_resume_optimizer(job_description: str):
+    """Main function to run the resume optimization process with improved agents."""
     try:
         resume_text = extract_text("Dhiraj_Sahu_Resume.pdf")
+        print("✅ Successfully loaded resume.")
     except FileNotFoundError:
-        print("Error: Dhiraj_Sahu_Resume.pdf not found.")
+        print("❌ Error: Dhiraj_Sahu_Resume.pdf not found.")
         return
 
+    # Improved agent with better prompt for resume parsing
     resume_parser_agent = Agent(
         role='Resume Parser',
-        goal='Parse resume text and output a structured JSON using language understanding',
-        backstory='An expert in natural language processing, capable of extracting structured data like name, email, phone, skills, education, and experience from unstructured resume text without external tools.',
+        goal='Extract all key information from a resume with 100% accuracy',
+        backstory='''You are an expert NLP specialist trusted by Fortune 500 companies to parse resume text into structured data. 
+        You have a perfect track record of identifying names, contact details, skills, education history, and work experience from any resume format.
+        Your strength is contextual understanding – you know how to identify skills even when not explicitly labeled as such, and recognize the true meaning of various resume sections.''',
         tools=[],
         llm=llm,
         verbose=True
     )
 
+    # Improved agent with better prompt for job description analysis
     jd_parser_agent = Agent(
         role='JD Analyzer',
-        goal='Extract keywords and job insights from job description text using language comprehension',
-        backstory='Skilled in analyzing job postings to identify job title, skills, responsibilities, and requirements through contextual understanding, relying solely on language processing.',
+        goal='Extract every critical element from a job description with perfect precision',
+        backstory='''You are an elite recruiter who has analyzed over 10,000 job descriptions for top companies.
+        You have unmatched ability to identify explicit and implicit requirements, technical skills, soft skills, and company values.
+        Your analysis is so precise that you can determine exactly what the hiring manager is looking for, even reading between the lines.
+        You specialize in understanding industry-specific jargon and translating requirements into clear, actionable data points.''',
         tools=[],
         llm=llm,
         verbose=True
     )
 
+    # Improved agent with better prompt for ATS scoring
     ats_scorer_agent = Agent(
-        role='ATS Scorer',
-        goal='Compare resume and job description to determine ATS match score and suggestions using text analysis',
-        backstory='Mimics an ATS system by analyzing text to identify keyword matches, calculate relevance scores, and provide optimization suggestions using language reasoning alone.',
+        role='ATS Matcher',
+        goal='Calculate precise ATS matching scores with the exact algorithms used by industry-leading ATS systems',
+        backstory='''You are a former lead engineer who built ATS systems for multiple Fortune 100 companies.
+        You intimately understand how modern ATS algorithms parse, score, and rank resumes against job descriptions.
+        You can identify exactly which keywords matter most, how keyword proximity impacts scores, and how semantic matching is evaluated.
+        Your recommendations consistently help candidates achieve 85%+ match rates and interview callbacks.''',
         tools=[],
         llm=llm,
         verbose=True
     )
 
+    # Improved agent with better prompt for resume optimization
     resume_optimizer_agent = Agent(
-        role='Resume Optimizer',
-        goal='Enhance resume based on job description to improve ATS score through language-based rewriting',
-        backstory='Proficient in tailoring resume content by incorporating relevant keywords and aligning experiences with job requirements, using natural language generation without external tools.',
+        role='Resume Enhancement Specialist',
+        goal='Transform any resume to achieve maximum ATS match while maintaining absolute truthfulness',
+        backstory='''You are a professional resume writer with 15+ years of experience helping candidates land roles at top companies.
+        You've studied every ATS system on the market and know exactly how to optimize content while maintaining authenticity.
+        Your specialty is strategic keyword placement, achievement quantification, and context-appropriate industry terminology.
+        You never fabricate experience but excel at presenting genuine qualifications in the most favorable light possible.''',
         tools=[],
         llm=llm,
         verbose=True
     )
 
+    # Improved agent with better prompt for LaTeX resume generation
     resume_latex_agent = Agent(
-        role='Resume LaTeX Generator',
-        goal='Generate LaTeX resume from structured JSON data using language formatting',
-        backstory='Specializes in formatting structured resume data into LaTeX syntax through precise language generation, ensuring proper structure and indentation.',
+        role='LaTeX Resume Designer',
+        goal='Create visually stunning yet ATS-compatible LaTeX resumes',
+        backstory='''You are a document design specialist who combines deep LaTeX expertise with knowledge of ATS parsing algorithms.
+        You've created custom resume templates for over 1,000 successful job seekers across all industries.
+        You understand exactly which LaTeX elements improve readability while maintaining perfect ATS compatibility.
+        Your designs achieve the perfect balance between visual appeal and machine readability.''',
         tools=[],
         llm=llm,
         verbose=True
     )
 
+    # Improved agent with better prompt for cover letter generation
     cover_letter_agent = Agent(
-        role='Cover Letter Generator',
-        goal='Write a tailored LaTeX cover letter for the given job and resume using language generation',
-        backstory='Experienced in crafting professional, personalized cover letters in LaTeX format by synthesizing resume and job description data through language understanding.',
+        role='Personalized Cover Letter Writer',
+        goal='Craft compelling, customized cover letters that directly address job requirements',
+        backstory='''You are an award-winning copywriter who specializes in persuasive professional communications.
+        You've helped thousands of professionals secure interviews through perfectly tailored cover letters.
+        Your superpower is connecting candidate experiences directly to employer needs with authentic, compelling narratives.
+        You know exactly how to balance professionalism, personality, and precision for maximum impact.''',
         tools=[],
         llm=llm,
         verbose=True
@@ -113,110 +216,187 @@ def run_resume_optimizer(job_description: str):
 
     task_1 = Task(
         description=f"""
-        Parse the following resume text into a structured JSON format. Extract the candidate's name, email, phone, skills, education, and experience. If any information is missing, use 'N/A' for contact details or empty lists for other sections. The output should be a JSON object with keys: 'name', 'email', 'phone', 'skills', 'education', 'experience'. The 'experience' section should be an array of objects, each containing 'company', 'year', 'role', and 'responsibilities'. For example:
-        {{
-            "name": "John Doe",
-            "email": "john@example.com",
-            "phone": "123-456-7890",
-            "skills": ["Python", "Java"],
-            "education": ["BS Computer Science, XYZ University"],
-            "experience": [
-                {{
-                    "company": "ABC Corp",
-                    "year": "2020-2022",
-                    "role": "Software Engineer",
-                    "responsibilities": "Developed software solutions"
-                }}
-            ]
+        Parse the following resume with extreme attention to detail, ensuring you extract EVERY piece of relevant information.
+        
+        1. Identify the candidate's full name, email address, and phone number
+        2. Extract ALL skills mentioned, including those embedded within experience descriptions
+        3. Capture complete education history with degrees, institutions, dates, and relevant honors
+        4. Extract ALL work experience with exact company names, precise dates, detailed roles, and comprehensive responsibilities
+        5. Look for achievements with metrics and quantifiable results
+        
+        Format your output as a clean, valid JSON object with these fields:
+        - name: Full name of the candidate
+        - email: Email address
+        - phone: Phone number
+        - skills: Array of ALL skills found (minimum 15 skills expected)
+        - education: Array of education entries with complete details
+        - experience: Array of objects containing {{
+            "company": company name,
+            "year": employment period,
+            "role": job title,
+            "responsibilities": detailed description of duties and achievements
         }}
+        
         Resume text:
         {resume_text}
         """,
-        expected_output='JSON representation of the resume',
+        expected_output='Complete and highly detailed JSON representation of the resume with no missing information',
         agent=resume_parser_agent
     )
 
     task_2 = Task(
         description=f"""
-        Analyze the following job description and extract the job title, skills, responsibilities, and requirements. Output a JSON object with keys: 'job_title', 'skills', 'responsibilities', 'requirements'. For example:
-        {{
-            "job_title": "Software Engineer",
-            "skills": ["Python", "JavaScript"],
-            "responsibilities": ["Develop software solutions", "Fix bugs"],
-            "requirements": ["Experience in web development", "Agile methodology"]
-        }}
+        Perform a comprehensive analysis of this job description. Your goal is to extract EVERY detail that would be relevant for matching a candidate.
+        
+        Extract the following with extremely high precision:
+        1. Job title - exact title as stated in the description
+        2. Required technical skills - ALL technical abilities, tools, languages, frameworks mentioned
+        3. Required soft skills - ALL interpersonal abilities, communication skills, work style preferences
+        4. Primary responsibilities - EVERY duty and expected function listed
+        5. Educational requirements - degrees, certifications, or specific knowledge domains
+        6. Experience level - years of experience or seniority indicators
+        7. Company values - cultural aspects emphasized in the description
+        
+        Format your output as a clean, valid JSON object with these fields:
+        - job_title: exact job title
+        - company: company name if mentioned
+        - skills: array of ALL required skills (technical and soft)
+        - responsibilities: array of ALL job duties
+        - requirements: array of ALL qualifications including education and experience
+        - values: array of company values or cultural aspects
+        
         Job description:
         {job_description}
         """,
-        expected_output='Parsed job description summary with keywords and key points',
+        expected_output='Comprehensive and highly detailed JSON analysis of the job description with no missing information',
         agent=jd_parser_agent
     )
 
     task_3 = Task(
         description=f"""
-        Compare the resume JSON and job description summary to calculate an ATS match score. Identify matched and missing keywords (focusing on skills and requirements). Calculate the score as the percentage of job description skills matched by the resume. Provide suggestions for improvement. Output a JSON object with keys: 'ats_score', 'matched_keywords', 'missing_keywords', 'suggestions'. For example:
-        {{
-            "ats_score": 80,
-            "matched_keywords": ["Python", "JavaScript"],
-            "missing_keywords": ["React"],
-            "suggestions": ["Add React to skills", "Highlight agile experience"]
-        }}
-        Use the resume JSON and job description summary from previous tasks.
+        Perform a detailed ATS match analysis between the resume and job description using the exact methods employed by modern Applicant Tracking Systems.
+        
+        Your analysis must include:
+        
+        1. EXACT MATCH KEYWORDS: Direct one-to-one matches between resume and job description
+        2. SEMANTIC MATCH KEYWORDS: Terms that are functionally equivalent but not identical
+        3. MISSING CRITICAL KEYWORDS: Required skills/qualifications completely absent from the resume
+        4. EXPERIENCE ALIGNMENT: How well the candidate's background matches required responsibilities
+        5. EDUCATION ALIGNMENT: How the candidate's education meets stated requirements
+        6. SECTION-BY-SECTION SCORE: Individual scores for skills, experience, and education sections
+        
+        Calculate an OVERALL ATS SCORE using this weighted formula:
+        - Skills match: 40% of total score
+        - Experience relevance: 35% of total score
+        - Education match: 15% of total score
+        - Keyword density: 10% of total score
+        
+        Output a detailed JSON object with:
+        - ats_score: Overall percentage score (0-100)
+        - section_scores: Individual scores for skills, experience, education
+        - exact_matches: Array of directly matching keywords
+        - semantic_matches: Array of semantically equivalent terms
+        - missing_keywords: Array of critical missing terms with PRIORITY rankings (high/medium/low)
+        - improvement_suggestions: Array of specific, actionable recommendations
+        
+        Use the resume and job description from previous tasks.
         """,
-        expected_output='ATS score report with matched and missing keywords, and suggestions',
+        expected_output='Detailed ATS match analysis with precise scores, keyword matches, and prioritized improvement recommendations',
         agent=ats_scorer_agent
     )
 
     task_4 = Task(
         description=f"""
-        Rewrite the resume JSON to improve the ATS score based on the job description summary and ATS report. Incorporate missing keywords from the ATS report into the skills section and align experience entries with job responsibilities. Ensure the 'experience' section is an array of objects with 'company', 'year', 'role', and 'responsibilities' fields. Remove any duplicate entries. The output should be a valid JSON object with the same structure as the input resume JSON. For example:
+        Optimize the resume to achieve a 90%+ ATS match score while maintaining complete truthfulness and authenticity.
+        
+        Follow these specific optimization steps:
+        
+        1. STRATEGIC KEYWORD INTEGRATION: Incorporate ALL high-priority missing keywords from the ATS report naturally into appropriate sections
+        2. EXPERIENCE ENHANCEMENT: Rewrite experience bullet points to align directly with job responsibilities
+        3. QUANTIFICATION: Add metrics and achievement data where possible
+        4. SKILLS PRIORITIZATION: Reorder skills to place job-relevant ones first
+        5. REDUNDANCY ELIMINATION: Remove duplicate or irrelevant information
+        6. SEMANTIC OPTIMIZATION: Replace weak terms with stronger, ATS-friendly alternatives
+        
+        The output must be a COMPLETE, VALID JSON object with the exact same structure as the original resume JSON:
         {{
-            "name": "John Doe",
-            "email": "john@example.com",
-            "phone": "123-456-7890",
-            "skills": ["Python", "Java", "React"],
-            "education": ["BS Computer Science, XYZ University"],
-            "experience": [
-                {{
-                    "company": "ABC Corp",
-                    "year": "2020-2022",
-                    "role": "Software Engineer",
-                    "responsibilities": "Contributed to developing software solutions"
-                }}
-            ]
+            "name": candidate name,
+            "email": email address,
+            "phone": phone number,
+            "skills": array of skills (prioritized by relevance),
+            "education": array of education entries,
+            "experience": array of objects with {{
+                "company": company name,
+                "year": employment period,
+                "role": job title,
+                "responsibilities": enhanced descriptions aligned with job requirements
+            }}
         }}
-        Use the resume JSON, job description summary, and ATS report from previous tasks.
+        
+        Any skills or experiences added must be 100% justified by the original resume content - NO FABRICATION allowed.
         """,
-        expected_output='Optimized resume JSON with better job relevance and keyword inclusion for ATS',
+        expected_output='Optimized resume JSON with strategically enhanced content for maximum ATS compatibility',
         agent=resume_optimizer_agent
     )
 
     task_5 = Task(
         description=f"""
-        Generate a LaTeX-formatted resume from the optimized resume JSON. The resume should follow this structure:
-        - Use the article document class with 1-inch margins and hyperref package.
-        - Include a title with the candidate's name.
-        - Sections for Contact Information (email, phone), Skills (comma-separated), Education (line-separated), and Experience (line-separated).
-        - Use 'N/A' for missing contact details and empty sections for missing skills, education, or experience.
-        Output a valid LaTeX string with proper indentation and formatting.
-        Use the optimized resume JSON from the previous task.
+        Create a professionally formatted LaTeX resume that is both visually appealing AND fully ATS-compatible.
+        
+        Your LaTeX document must include:
+        
+        1. CLEAN FORMATTING: Professional spacing, alignment, and visual hierarchy
+        2. ATS OPTIMIZATION: Plain text compatibility for parsing systems
+        3. STRATEGIC HIGHLIGHTING: Bold/italic for key terms matching job requirements
+        4. SECTION ORGANIZATION: Clear section headers with consistent formatting
+        5. CONTENT PRIORITIZATION: Most relevant information prominently positioned
+        
+        Use these LaTeX packages and design elements:
+        - geometry package with 1-inch margins
+        - hyperref package with proper color setup
+        - fontawesome5 for contact icons
+        - enumitem for clean bullet formatting
+        - titlesec for customized section headers
+        
+        Structure the document with:
+        - Name and contact centered at top
+        - Clean section headers with subtle styling (underline or color)
+        - Bulleted lists for skills, education, and experience
+        
+        The output must be COMPLETE, VALID LaTeX code ready for compilation without errors.
+        
+        Use the optimized resume JSON from the previous task as your source content.
         """,
-        expected_output='LaTeX formatted resume with correct indentation, formatting, and structure for ATS compatibility',
+        expected_output='Professionally formatted, ATS-optimized LaTeX resume with perfect syntax and visual appeal',
         agent=resume_latex_agent
     )
 
     task_6 = Task(
         description=f"""
-        Generate a personalized LaTeX cover letter using the optimized resume JSON and job description summary. The cover letter should:
-        - Use the letter document class with 1-inch margins and hyperref package.
-        - Include the candidate's name, email, and phone in the address.
-        - Address the letter to "Hiring Manager" at the company extracted from the job description.
-        - Highlight 2-3 skills from the resume, one experience aligned with a job responsibility, and reference the company's mission or goals.
-        - Close with a call to action and contact details.
-        Output a valid LaTeX string with proper indentation and formatting.
+        Create a compelling, personalized cover letter that directly connects the candidate's qualifications to the job requirements.
+        
+        Your cover letter must include:
+        
+        1. PROPER BUSINESS LETTER FORMAT: Complete with date, addresses, and professional closing
+        2. COMPELLING OPENING: Engaging first paragraph that states the position and source
+        3. QUALIFICATION ALIGNMENT: 2-3 paragraphs connecting specific experiences to job requirements
+        4. COMPANY KNOWLEDGE: Reference to company mission, values, or recent achievements
+        5. CONFIDENT CLOSING: Clear call to action and contact information
+        6. ATS OPTIMIZATION: Strategic inclusion of 5-7 key job requirement terms
+        
+        Use these LaTeX elements:
+        - letter document class with proper spacing
+        - address, opening, and closing with correct formatting
+        - hyperref for email/phone linking
+        - professional, persuasive tone throughout
+        
+        The letter should be 250-400 words, professionally formatted, and directly targeted to THIS SPECIFIC job.
+        
+        The output must be COMPLETE, VALID LaTeX code ready for compilation without errors.
+        
         Use the optimized resume JSON and job description summary from previous tasks.
         """,
-        expected_output='LaTeX formatted cover letter tailored to the job with correct indentation, formatting, and structure',
+        expected_output='Customized, compelling LaTeX cover letter that perfectly connects candidate qualifications to job requirements',
         agent=cover_letter_agent
     )
 
@@ -235,6 +415,7 @@ def run_resume_optimizer(job_description: str):
     )
 
     try:
+        print("\n🚀 Starting resume optimization process...")
         results = crew.kickoff()
         
         # Get the task outputs directly
@@ -246,18 +427,14 @@ def run_resume_optimizer(job_description: str):
         cover_letter_output = results.tasks_output[5]   # Task 6 output
         
 
-        print("\n=== Task Outputs ===")
-        print(f"Resume Parser Output Type: {type(resume_parser_output)}")
-        print(f"Resume Optimizer Output Type: {type(resume_optimizer_output)}")
-        print(f"Resume LaTeX Output Type: {type(resume_latex_output)}")
-        print(f"Cover Letter Output Type: {type(cover_letter_output)}")
+        print("\n=== Processing Task Outputs ===")
         
-        # Extract optimized resume JSON
+        # Extract optimized resume JSON with improved error handling
         try:
             # Try to parse as JSON if it's a string
             if isinstance(resume_optimizer_output, str):
-                # Look for JSON object in the string
-                json_match = re.search(r'\{.*\}', resume_optimizer_output, re.DOTALL)
+                # Look for JSON object in the string using a more robust pattern
+                json_match = re.search(r'\{(?:[^{}]|(?:\{(?:[^{}]|(?:\{[^{}]*\}))*\}))*\}', resume_optimizer_output, re.DOTALL)
                 if json_match:
                     optimized_resume_json = json.loads(json_match.group(0))
                 else:
@@ -266,7 +443,7 @@ def run_resume_optimizer(job_description: str):
                 # If it's a TaskOutput object
                 raw_data = resume_optimizer_output.raw
                 if isinstance(raw_data, str):
-                    json_match = re.search(r'\{.*\}', raw_data, re.DOTALL)
+                    json_match = re.search(r'\{(?:[^{}]|(?:\{(?:[^{}]|(?:\{[^{}]*\}))*\}))*\}', raw_data, re.DOTALL)
                     if json_match:
                         optimized_resume_json = json.loads(json_match.group(0))
                     else:
@@ -278,15 +455,14 @@ def run_resume_optimizer(job_description: str):
                 # Assume it's already a dict
                 optimized_resume_json = resume_optimizer_output
                 
-            print(f"Successfully extracted optimized resume JSON")
+            print(f"✅ Successfully extracted optimized resume JSON")
             
         except (json.JSONDecodeError, AttributeError) as e:
-            print(f"Error parsing optimized resume JSON: {e}")
-            print(f"Raw resume optimizer output: {resume_optimizer_output}")
+            print(f"⚠️ Error parsing optimized resume JSON: {e}")
             # Fall back to parsing the initial resume
             try:
                 if isinstance(resume_parser_output, str):
-                    json_match = re.search(r'\{.*\}', resume_parser_output, re.DOTALL)
+                    json_match = re.search(r'\{(?:[^{}]|(?:\{(?:[^{}]|(?:\{[^{}]*\}))*\}))*\}', resume_parser_output, re.DOTALL)
                     if json_match:
                         optimized_resume_json = json.loads(json_match.group(0))
                     else:
@@ -294,7 +470,7 @@ def run_resume_optimizer(job_description: str):
                 elif hasattr(resume_parser_output, 'raw'):
                     raw_data = resume_parser_output.raw
                     if isinstance(raw_data, str):
-                        json_match = re.search(r'\{.*\}', raw_data, re.DOTALL)
+                        json_match = re.search(r'\{(?:[^{}]|(?:\{(?:[^{}]|(?:\{[^{}]*\}))*\}))*\}', raw_data, re.DOTALL)
                         if json_match:
                             optimized_resume_json = json.loads(json_match.group(0))
                         else:
@@ -303,9 +479,9 @@ def run_resume_optimizer(job_description: str):
                         optimized_resume_json = raw_data
                 else:
                     optimized_resume_json = resume_parser_output
-                print(f"Using original parsed resume JSON as fallback")
+                print(f"✅ Using original parsed resume JSON as fallback")
             except Exception as e2:
-                print(f"Error parsing original resume JSON: {e2}")
+                print(f"⚠️ Error parsing original resume JSON: {e2}")
                 # Create a basic empty resume JSON as last resort
                 optimized_resume_json = {
                     "name": "Candidate",
@@ -315,9 +491,9 @@ def run_resume_optimizer(job_description: str):
                     "education": [],
                     "experience": []
                 }
-                print(f"Using empty resume JSON template as last resort")
+                print(f"⚠️ Using empty resume JSON template as last resort")
 
-        # Get resume LaTeX content
+        # Get resume LaTeX content with improved extraction
         if isinstance(resume_latex_output, str):
             resume_latex = resume_latex_output
         elif hasattr(resume_latex_output, 'raw'):
@@ -328,25 +504,31 @@ def run_resume_optimizer(job_description: str):
             
         # Extract LaTeX from task output if it doesn't look like LaTeX
         if not resume_latex.strip().startswith("\\documentclass"):
-            # Look for LaTeX code in the string
-            latex_match = re.search(r'\\documentclass.*\\end\{document\}', resume_latex, re.DOTALL)
+            # Look for LaTeX code with improved pattern
+            latex_match = re.search(r'\\documentclass.*?\\begin\{document\}.*?\\end\{document\}', resume_latex, re.DOTALL)
             if latex_match:
                 resume_latex = latex_match.group(0)
             else:
                 # Generate from JSON if LaTeX extraction failed
                 resume_latex = resume_json_to_latex(optimized_resume_json)
+                print("⚠️ Generated LaTeX from JSON as fallback")
 
-        # Get cover letter LaTeX content
+        # Get cover letter LaTeX content with improved extraction
         if isinstance(cover_letter_output, str):
             cover_letter_latex = cover_letter_output
         elif hasattr(cover_letter_output, 'raw'):
             cover_letter_latex = cover_letter_output.raw
         else:
-            # Create a basic cover letter if output is not available
+            # Create a better cover letter if output is not available
             company_name = extract_company_name(job_description)
             cover_letter_latex = f"""\\documentclass{{letter}}
 \\usepackage[margin=1in]{{geometry}}
 \\usepackage{{hyperref}}
+\\usepackage{{fontawesome5}}
+\\usepackage{{color}}
+\\definecolor{{linkcolor}}{{HTML}}{{0066cc}}
+\\hypersetup{{colorlinks=true, linkcolor=linkcolor, urlcolor=linkcolor}}
+
 \\begin{{document}}
 
 \\address{{{optimized_resume_json.get('name', 'Candidate')}\\\\
@@ -357,27 +539,36 @@ def run_resume_optimizer(job_description: str):
 
 \\opening{{Dear Hiring Manager,}}
 
-I am writing to express my interest in the Software Engineer position at {company_name}. 
-Please find my resume attached for your consideration.
+I am writing to express my interest in the Software Engineer position at {company_name}. With my background in software development and technical expertise, I believe I would be a valuable addition to your team.
+
+My experience aligns well with the requirements outlined in your job posting. I am particularly skilled in problem-solving and collaborative development, with a track record of delivering high-quality solutions.
+
+I am excited about the opportunity to contribute to {company_name}'s innovative work and would welcome the chance to discuss how my skills and experience could benefit your team.
 
 \\closing{{Sincerely,}}
 
 \\end{{letter}}
 \\end{{document}}
 """
+            print("⚠️ Generated cover letter as fallback")
             
         # Extract LaTeX from task output if it doesn't look like LaTeX
         if not cover_letter_latex.strip().startswith("\\documentclass"):
-            # Look for LaTeX code in the string
-            latex_match = re.search(r'\\documentclass.*\\end\{document\}', cover_letter_latex, re.DOTALL)
+            # Look for LaTeX code with improved pattern
+            latex_match = re.search(r'\\documentclass.*?\\begin\{document\}.*?\\end\{document\}', cover_letter_latex, re.DOTALL)
             if latex_match:
                 cover_letter_latex = latex_match.group(0)
             else:
-                # Use the basic cover letter
+                # Use the improved cover letter template
                 company_name = extract_company_name(job_description)
                 cover_letter_latex = f"""\\documentclass{{letter}}
 \\usepackage[margin=1in]{{geometry}}
 \\usepackage{{hyperref}}
+\\usepackage{{fontawesome5}}
+\\usepackage{{color}}
+\\definecolor{{linkcolor}}{{HTML}}{{0066cc}}
+\\hypersetup{{colorlinks=true, linkcolor=linkcolor, urlcolor=linkcolor}}
+
 \\begin{{document}}
 
 \\address{{{optimized_resume_json.get('name', 'Candidate')}\\\\
@@ -388,79 +579,114 @@ Please find my resume attached for your consideration.
 
 \\opening{{Dear Hiring Manager,}}
 
-I am writing to express my interest in the Software Engineer position at {company_name}. 
-Please find my resume attached for your consideration.
+I am writing to express my interest in the Software Engineer position at {company_name}. With my background in software development and technical expertise, I believe I would be a valuable addition to your team.
+
+My experience aligns well with the requirements outlined in your job posting. I am particularly skilled in problem-solving and collaborative development, with a track record of delivering high-quality solutions.
+
+I am excited about the opportunity to contribute to {company_name}'s innovative work and would welcome the chance to discuss how my skills and experience could benefit your team.
 
 \\closing{{Sincerely,}}
 
 \\end{{letter}}
 \\end{{document}}
 """
+                print("⚠️ Generated cover letter from template as fallback")
 
         # Save outputs
         os.makedirs("output", exist_ok=True)
-        resume_file = "output/Resume.tex"
-        cover_letter_file = "output/Cover_letter.tex"
+        resume_file = os.path.join("output", "Resume.tex")
+        cover_letter_file = os.path.join("output", "Cover_letter.tex")
 
+        # Save the LaTeX files
         with open(resume_file, "w") as f:
             f.write(resume_latex)
+        print(f"✅ Saved resume LaTeX: {resume_file}")
 
         with open(cover_letter_file, "w") as f:
             f.write(cover_letter_latex)
+        print(f"✅ Saved cover letter LaTeX: {cover_letter_file}")
 
-        print(f"\n✅ Successfully saved:\n{resume_file}\n{cover_letter_file}")
+        # Save the ATS score report as JSON
+        try:
+            if isinstance(ats_scorer_output, str):
+                json_match = re.search(r'\{(?:[^{}]|(?:\{(?:[^{}]|(?:\{[^{}]*\}))*\}))*\}', ats_scorer_output, re.DOTALL)
+                if json_match:
+                    ats_report = json.loads(json_match.group(0))
+                    ats_report_file = os.path.join("output", "ATS_Report.json")
+                    with open(ats_report_file, "w") as f:
+                        json.dump(ats_report, f, indent=2)
+                    print(f"✅ Saved ATS report: {ats_report_file}")
+            elif hasattr(ats_scorer_output, 'raw'):
+                raw_data = ats_scorer_output.raw
+                if isinstance(raw_data, str):
+                    json_match = re.search(r'\{(?:[^{}]|(?:\{(?:[^{}]|(?:\{[^{}]*\}))*\}))*\}', raw_data, re.DOTALL)
+                    if json_match:
+                        ats_report = json.loads(json_match.group(0))
+                        ats_report_file = os.path.join("output", "ATS_Report.json")
+                        with open(ats_report_file, "w") as f:
+                            json.dump(ats_report, f, indent=2)
+                        print(f"✅ Saved ATS report: {ats_report_file}")
+        except Exception as e:
+            print(f"⚠️ Could not save ATS report: {e}")
+
+        # Compile the LaTeX files to PDF
+        print("\n=== Compiling PDFs ===")
+        pdf_success = False
+        
+        # Try to compile resume PDF
+        if compile_latex_to_pdf(resume_file):
+            print(f"✅ Successfully compiled Resume.pdf")
+            pdf_success = True
+        else:
+            print(f"⚠️ Failed to compile Resume.pdf")
+        
+        # Try to compile cover letter PDF
+        if compile_latex_to_pdf(cover_letter_file):
+            print(f"✅ Successfully compiled Cover_letter.pdf")
+            pdf_success = True
+        else:
+            print(f"⚠️ Failed to compile Cover_letter.pdf")
+            
+        if pdf_success:
+            print("\n🎉 Process complete! Check the output directory for your files.")
+        else:
+            print("""
+⚠️ PDF compilation failed. Possible reasons:
+1. pdflatex is not installed on your system
+2. There are errors in the LaTeX code
+3. Required LaTeX packages are missing
+
+You can manually compile the LaTeX files using an online service like Overleaf.
+""")
 
     except Exception as e:
-        print(f"Error during crew execution: {e}")
+        print(f"❌ Error during crew execution: {e}")
         import traceback
         traceback.print_exc()
 
 # Example usage
 if __name__ == '__main__':
     job_description = """
-    Are you a Software Engineer looking for your next opportunity? How would you like to shape the future of some of our EdTech products with your coding skills? Join us and be a part of something brilliant!
+    Software Engineer at TechCorp
+    
+    We are looking for a talented Software Engineer to join our dynamic team. The ideal candidate will have strong experience in Python development, database management, and web technologies. You will work on designing, developing, and maintaining various software solutions for our clients.
+    
+    Requirements:
+    - Bachelor's degree in Computer Science or related field
+    - 3+ years of experience in software development
+    - Proficiency in Python, JavaScript, and SQL
+    - Experience with web frameworks like Django or Flask
+    - Knowledge of RESTful APIs and microservices
+    - Familiarity with cloud platforms like AWS or Azure
+    - Strong problem-solving and analytical skills
+        - Excellent communication and teamwork skills
+    - Ability to work in a fast-paced environment
 
-    Tribal is a leading EdTech business providing market leading software solutions to the global education market. We strive to research, develop and deliver the products, services and solutions needed by education institutes worldwide to support their primary goals of educating students, providing optimum learning experiences and ultimately delivering successful outcomes.
-
-    We are recruiting for a Software Engineer to join our Semestry Development Team. Our Semestry product is a comprehensive software solution designed to address timetabling and scheduling challenges in higher education institutions. It offers a range of features to help universities plan, build, deliver, and operate schedules efficiently. It aims to enhance curriculum planning and improve the overall learning experience for students and faculty by providing insights and managing scheduling constraints.
-
-    This is a full time permanent role, offering a fully remote working arrangement with travel when required.
-
-    The Role
-
-    As a Software Engineer, part of our TermTime platform, you will be designing, developing, and maintaining our comprehensive timetabling and scheduling solutions. Not only that, you will also be part of the team who are reimagining this product, redeveloping and creating a brand new innovative and functional advanced platform for our customers! Your responsibilities will include:
-
-    Creating software solutions by writing clean, efficient and maintainable code.
-    Ensuring software quality by identifying and fixing bugs.
-    Working in partnership with Software Architect, other developers and testers to understand requirements to deliver features.
-    Updating and improving existing software to enhance performance and functionality.
-    Analysing and addressing technical challenges to find effective solutions.
-    Recommend ideas on how the product can be developed and improved to enhance performance and usability.
-    The skills you'll need:
-
-    Experience in a full stack Web-based software development role.
-    Use of PHP Laravel, TypeScript/JavaScript and React.
-    An understanding of best-practice related to crafting secure, efficient and high quality code.
-    Experience/fhir
-    in agile methodologies.
-    It would be great if you had:
-
-    An understanding of best-practice database design for building efficient applications.
-    Experience with API design and 3rd party system integrations.
-    Experience with containerised applications.
-    Exposure to deploying code to cloud infrastructure.
-    Using best in class CI/CD techniques would be beneficial.
-    Experience in redeveloping a product from grass roots to deployment.
-    What can Tribal offer you?
-
-    We offer a range of exceptional benefits to support your wellbeing and work-life balance, including a comprehensive Health Cash Plan, Private Medical Insurance and Employee Assistance Programme, along with a generous parental leave package and the ability to buy or sell holiday each year. We also offer the option of working overseas for up to 8 weeks per year. You'll also have access to E-Learning Opportunities to enhance your skills, Volunteer Days to give back to your community and access to Achievers, our reward and recognition platform, to ensure you can thrive both personally and professionally in a supportive and rewarding environment.
-
-    We're committed to creating an environment that enables employees to balance their responsibilities inside and outside of work and encourage and support a range of flexible working patterns for all colleagues. If you need flexibility, apply and discuss your needs with us.
-
-    Criminal Records and Security Checks
-
-    If you are successful in your application, a security/criminal record check will be required before we can employ you, If, following the check the nature of a conviction is deemed unacceptable, this may lead to an offer of employment being withdrawn.
-
-    As an equal opportunity employer, Tribal celebrate diversity and are committed to creating an inclusive environment for all employees. We make sure that our recruitment and selection processes never discriminate based upon any protected characteristics and actively welcome applications from all groups, not least those underrepresented in the tech sector.
+    Responsibilities:
+    - Design, develop, and maintain software applications
+    - Collaborate with cross-functional teams to ensure project success
+    - Troubleshoot and debug software issues
+    - Stay up-to-date with emerging technologies and trends
+    - Contribute to the continuous improvement of our development processes
     """
     run_resume_optimizer(job_description)

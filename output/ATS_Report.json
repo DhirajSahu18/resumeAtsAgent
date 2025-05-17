@@ -1,0 +1,57 @@
+{
+  "ats_score": 78,
+  "section_scores": {
+    "skills": 85,
+    "experience": 75,
+    "education": 70
+  },
+  "exact_matches": [
+    "Python",
+    "JavaScript",
+    "SQL",
+    "Django",
+    "Flask",
+    "RESTful APIs",
+    "AWS",
+    "Communication",
+    "Teamwork"
+  ],
+  "semantic_matches": [
+    {
+      "resume": "Cpp",
+      "job_description": "Problem-solving"
+    },
+    {
+      "resume": "Analytical skills",
+      "job_description": "Analytical skills"
+    },
+    {
+      "resume": "Agile Methodologies",
+      "job_description": "Fast-paced environment"
+    }
+  ],
+  "missing_keywords": [
+    {
+      "keyword": "Microservices",
+      "priority": "high"
+    },
+    {
+      "keyword": "Azure",
+      "priority": "medium"
+    },
+    {
+      "keyword": "3+ years of experience in software development",
+      "priority": "high"
+    }
+  ],
+  "experience_alignment": "The candidate has relevant internship experience in software engineering roles, demonstrating skills in front-end and back-end development. The experience aligns well with the job description, although the candidate should emphasize projects that showcase experience with microservices.",
+  "education_alignment": "The candidate's Bachelor's degree in Computer Science aligns with the job requirements. Highlighting relevant coursework (e.g., distributed systems) could further strengthen the match.",
+  "improvement_suggestions": [
+    "Quantify achievements in resume using metrics to demonstrate impact, e.g., 'Improved application performance by X%'.",
+    "Add a project or experience that showcases experience with microservices to address the missing 'Microservices' keyword.",
+    "Explicitly mention 'Azure' in the resume if the candidate has any experience with it, even if it's a personal project.",
+    "In the resume summary or in the experience descriptions, explicitly state or rephrase to reflect '3+ years of experience in software development' to meet the requirement. Even internships can contribute towards this if framed correctly.",
+    "Tailor the resume to emphasize experience with cloud platforms (AWS, Azure).",
+    "Include a brief summary at the beginning of the resume highlighting key skills and experience relevant to the job description."
+  ]
+}
