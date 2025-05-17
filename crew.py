@@ -93,7 +93,7 @@ def run_resume_optimizer(job_description: str):
 
     task_5 = Task(
         description='Generate a personalized LaTeX cover letter using the updated resume and job description.',
-        expected_output='LaTeX formatted cover letter tailored to the job',
+        expected_output='LaTeX formatted cover letter tailored to the job also with correct indentation , formatting and structure',
         agent=cover_letter_agent
     )
 

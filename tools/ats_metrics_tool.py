@@ -1,28 +1,25 @@
-# tools/ats_metrics_tool.py
 from crewai.tools import BaseTool
-from gemini import model
-import json
+from typing import Dict
 
 class ATSMetricsTool(BaseTool):
-    name:str = "ATSMetricsTool"
-    description:str = "Compares resume and JD data to calculate ATS score and identify missing content."
+    name: str = "ATS Score Calculator"
+    description: str = "Compares resume JSON with JD JSON to compute ATS score and suggestions."
 
-    def _run(self, resume_json: str, jd_summary: str) -> str:
-        prompt = f"""
-        Compare the following resume (in JSON) with the job description summary. 
-        Score it out of 100 based on relevance and keyword match.
+    def _run(self, inputs: Dict) -> Dict:
+        resume = inputs.get("resume", {})
+        jd = inputs.get("job_description", {})
 
-        Resume JSON:
-        {resume_json}
+        resume_skills = set([s.lower() for s in resume.get("skills", [])])
+        jd_skills = set([s.lower() for s in jd.get("skills", [])])
 
-        JD Summary:
-        {jd_summary}
+        matched = resume_skills & jd_skills
+        missing = jd_skills - resume_skills
 
-        Output:
-        - ATS Score
-        - Matched Keywords
-        - Missing Keywords
-        - Suggestions to improve
-        """
-        response = model.generate_content(prompt)
-        return response.text
+        score = int(len(matched) / max(len(jd_skills), 1) * 100)
+
+        return {
+            "score": score,
+            "matched_skills": list(matched),
+            "missing_skills": list(missing),
+            "suggestions": f"Add missing keywords: {', '.join(missing)}"
+        }
