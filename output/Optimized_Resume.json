@@ -1,0 +1,102 @@
+{
+  "name": "Dhiraj Sahu",
+  "email": "dhirajksahu01@gmail.com",
+  "phone": "9324211798",
+  "skills": [
+    "AI based system development",
+    "Recommendation letter writing (AI)",
+    "Document formatting (AI)",
+    "File / error checking (AI)",
+    "Document naming (AI)",
+    "Python",
+    "Javascript",
+    "Typescript",
+    "Go",
+    "React.js",
+    "Next.js",
+    "Node.js",
+    "Express.js",
+    "RESTful APIs",
+    "WebSockets",
+    "MongoDB",
+    "MySQL",
+    "PostgreSQL",
+    "Firebase",
+    "Git",
+    "GitHub Actions",
+    "Docker",
+    "CI/CD Concepts",
+    "AWS EC2",
+    "Vercel",
+    "Netlify",
+    "scikit-learn",
+    "TensorFlow",
+    "Pandas",
+    "NumPy",
+    "Matplotlib",
+    "C",
+    "Cpp",
+    "Java",
+    "HTML5",
+    "CSS3",
+    "Tailwind CSS",
+    "Bootstrap",
+    "PHP",
+    "Django",
+    "Flask",
+    "Data Preprocessing",
+    "Model Evaluation",
+    "Supervised Learning",
+    "Postman",
+    "Visual Studio Code",
+    "Figma",
+    "Linux/Ubuntu CLI",
+    "Agile Methodologies",
+    "Debugging",
+    "Testing",
+    "API Integration",
+    "Responsive Web Design",
+    "Web Security Practices",
+    "MERN Stack",
+    "AWS (EC2, SES)",
+    "Gemini API",
+    "Cron",
+    "Programming",
+    "Engineering",
+    "Remote or hybrid work capability"
+  ],
+  "education": [
+    {
+      "institution": "Terna College of Engineering",
+      "degree": "BE in Computer Science",
+      "year": "2021 \u2013 2025",
+      "details": "CGPA: 7.9/10, Coursework: Computer Architecture, Comparison of Learning Algorithms, Computational Theory"
+    },
+    {
+      "institution": "RKT College of Science Commerce and Arts",
+      "degree": "HSC in Science",
+      "year": "2019 \u2013 2021",
+      "details": "Percentage : 90/100"
+    },
+    {
+      "institution": "Model English High School",
+      "degree": "SSC",
+      "year": "2021",
+      "details": "Percentage: 86/100"
+    }
+  ],
+  "experience": [
+    {
+      "company": "Deloitte",
+      "year": "January 2025 \u2013 April 2025",
+      "role": "ADMM Intern",
+      "responsibilities": "Analyzed complex datasets to uncover actionable insights, supporting data-driven decision-making for client and internal projects. Implemented AI-driven techniques for data analysis, contributing to the development of an AI based system. Designed and automated data processing workflows, reducing manual reporting time by 30% and improving data accuracy. Developed scalable internal tools and features to enhance data accessibility, streamline operations, and support business growth. Collaborated with cross-functional teams to optimize reporting and analytics processes, improving project delivery efficiency. Automated document formatting and file/error checking processes, enhancing data quality. Assisted in recommendation letter writing processes by providing data-driven insights."
+    },
+    {
+      "company": "CCBUL LLP",
+      "year": "August 2023 \u2013 Oct 2023",
+      "role": "Software Engineer Intern",
+      "responsibilities": "Designed and developed responsive front-end interfaces to improve user experience and accessibility across web platforms. Built and integrated scalable back-end services to support real-time data processing and complex business logic. Optimized performance for key application workflows, reducing page load times and API response times by up to 40%. Collaborated with product managers and senior engineers to deliver new features, resulting in successful deployment of a large-scale client project. Contributed to document naming conventions and strategies to improve data organization."
+    }
+  ]
+}

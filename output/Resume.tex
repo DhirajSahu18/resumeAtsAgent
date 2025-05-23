@@ -1,82 +1,170 @@
-\documentclass[11pt]{article}
+\documentclass[letterpaper, 11pt]{article}
 
+% Packages
+\usepackage{latexsym}
+\usepackage[empty]{fullpage}
 \usepackage{geometry}
-\geometry{margin=1in}
-
+\geometry{left=1in, right=1in, top=1in, bottom=1in}
 \usepackage{hyperref}
-\usepackage{xcolor}
-\hypersetup{
-    colorlinks=true,
-    linkcolor=blue,
-    filecolor=magenta,      
-    urlcolor=cyan,
-}
-
-\usepackage{fontawesome5}
+\usepackage{url}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
 \usepackage{enumitem}
 \usepackage{titlesec}
+\usepackage{multicol}
+\usepackage{fontawesome5}
+\usepackage{ragged2e}
 
-% Custom Section Headers
-\titleformat{\section}
-  {\Large\bfseries}
-  {\thesection}
-  {1em}
-  {\underline}
+% Colors
+\usepackage{color}
+\definecolor{darkblue}{rgb}{0.0,0.0,0.6}
+\definecolor{darkred}{rgb}{0.6,0.0,0.0}
+\definecolor{darkgreen}{rgb}{0.0,0.6,0.0}
+
+% Hyperlink setup
+\hypersetup{
+    colorlinks=true,
+    linkcolor=darkblue,
+    filecolor=darkgreen,
+    urlcolor=darkred,
+    citecolor=darkblue
+}
+
+% Font customization
+\usepackage{fontspec}
+\usepackage{lipsum}
+
+% Section header styling
+\titleformat{\section}{\Large\bfseries\color{black}}{\thesection}{1em}{\underline}
+\titlespacing{\section}{0pt}{3.5ex plus 1ex minus .2ex}{0.3ex plus .2ex}
+
+% List customization
+\setlist{nosep}
+
+% Command to add vertical space between list items
+\newcommand{\listspace}{\vspace{-0.5em}}
+
+% Resume data (from JSON)
+\def\name{Dhiraj Sahu}
+\def\email{dhirajksahu01@gmail.com}
+\def\phone{9324211798}
+\def\skills{Python, JavaScript, SQL, Django, Flask, RESTful APIs, Microservices, AWS, Azure, Software Development, Database Management, Web Technologies, Problem-solving, Analytical skills, Communication skills, Teamwork, C, Cpp, Typescript, Go, HTML5, CSS3, React.js, Next.js, Tailwind CSS, Bootstrap, Node.js, Express.js, PHP, WebSockets, MongoDB, MySQL, PostgreSQL, Firebase, Git, GitHub Actions, Docker, CI/CD Concepts, Nginx, AWS EC2, Vercel, Netlify, scikit-learn, TensorFlow, Pandas, NumPy, Matplotlib, Data Preprocessing, Model Evaluation, Supervised Learning, Postman, Visual Studio Code, Figma, Linux/Ubuntu CLI, Agile Methodologies, Debugging, Testing, API Integration, Responsive Web Design, Web Security Practices, MERN Stack, Gemini API, Cron}
+\def\educationi{Terna College of Engineering}
+\def\educationd{BE in Computer Science}
+\def\educationy{2021 – 2025}
+\def\educationdetails{CGPA: 7.9/10\newline Coursework: Computer Architecture, Comparison of Learning Algorithms, Computational Theory}
+\def\educationii{RKT College of Science Commerce and Arts}
+\def\educationdi{HSC in Science}
+\def\educationyi{2019 – 2021}
+\def\educationdetailsi{Percentage : 90/100}
+\def\educationiii{Model English High School}
+\def\educationdii{SSC}
+\def\educationyii{2021}
+\def\educationdetailsii{Percentage: 86/100}
+\def\companyone{Deloitte}
+\def\yearone{January 2025–April 2025}
+\def\roleone{ADMM Intern}
+\def\responone{Analyzed complex datasets to uncover actionable insights, supporting data-driven decision-making for client and internal projects. Applied analytical skills to improve data accuracy.\newline Designed and automated data processing workflows, reducing manual reporting time by 30% and improving data accuracy, which contributed to the continuous improvement of development processes.\newline Developed scalable internal tools and features to enhance data accessibility, streamline operations, and support business growth. Showcased problem-solving skills.\newline Collaborated with cross-functional teams to optimize reporting and analytics processes, improving project delivery efficiency. Demonstrated teamwork and communication skills.}
+\def\companytwo{CCBUL LLP}
+\def\yeartwo{August 2023 – Oct 2023}
+\def\roletwo{Software Engineer Intern}
+\def\respontwo{Designed and developed responsive front-end interfaces to improve user experience and accessibility across web platforms, utilizing web technologies.\newline Built and integrated scalable back-end services to support real-time data processing and complex business logic, contributing to software development.\newline Optimized performance for key application workflows, reducing page load times and API response times by up to 40%, demonstrating problem-solving and analytical skills.\newline Collaborated with product managers and senior engineers to deliver new features, resulting in successful deployment of a large-scale client project. Showcased teamwork and communication skills.}
+\def\projectone{Bypass-Prevention System for Secure Event Management}
+\def\projectdetailsone{Engineered a scalable event registration system that securely handled over 14,000 users daily for 15 consecutive days, with encrypted QR code generation and rule distribution. Leveraged database management skills to ensure data integrity.\newline Built real-time QR scanning and user verification workflows to prevent bypassing, ensuring 100% authenticity at event check-ins, showcasing problem-solving abilities.\newline Automated participant data export and timestamp tracking into Excel reports, enabling efficient auditing and operational transparency.\newline Tools and Technologies: MERN Stack, Tailwind CSS, AWS (EC2, SES), Vercel, Nginx, Firebase Authentication}
+\def\projecttwo{AI-Powered Task Management Chatbot}
+\def\projectdetailstwo{Architected an AI-driven chatbot that allows users to seamlessly create reminders and notes using natural language; increased user retention by 25% within the first three months of deployment, contributing to overall platform growth. Demonstrated analytical skills.\newline Automated scheduled task execution and timely reminders using server-side cronjobs, ensuring reliability without manual intervention. Utilized software development principles.\newline Orchestrated a serverless backend architecture leveraging Node.js and MongoDB for a chatbot, enabling 200 concurrent user sessions with sub-300ms response times, thereby enhancing user engagement and satisfaction.\newline Tools and Technologies: Node.js, Express, MongoDB, Gemini API, Cron, Tailwind CSS, Firebase Authentication}
+\def\projectthree{Additional Projects}
+\def\projectdetailsthree{Facial Attendance System, Qr Based Food Ordering and Management, Online Auction System, Credit fraud Detection}
+\def\publicationtitle{Machine Learning Techniques for Breast Cancer Detection}
+\def\publicationauthors{Dhiraj Sahu, Prajwal Naik}
+\def\publicationdate{Jan 2025}
+\def\publicationlink{Link to Paper}
+\def\summarytext{Highly motivated and skilled Software Engineer with approximately 3+ years of experience in software development through internships and academic projects. Proficient in Python, JavaScript, SQL, and experienced with web frameworks like Django and Flask. Strong understanding of RESTful APIs, microservices, and familiar with cloud platforms like AWS and Azure. Possesses strong problem-solving, analytical, communication, and teamwork skills. Eager to contribute to a dynamic team environment and drive continuous improvement in a fast-paced setting.}
 
 \begin{document}
 
 % Name and Contact Information
 \begin{center}
-{\Huge \textbf{Dhiraj Sahu}} \\
-\vspace{0.5em}
-\faEnvelope\ \href{mailto:dhirajksahu01@gmail.com}{dhirajksahu01@gmail.com} \hspace{1em}
-\faPhone\ 9324211798
+    {\Huge \bf \name} \\
+    \vspace{0.5em}
+    \faEnvelope \href{mailto:\email}{\email} \hspace{1em} | \hspace{1em}
+    \faPhone \phone
 \end{center}
 
+\section{Summary}
+\summarytext
+
+% Skills Section
 \section{Skills}
-\begin{itemize}[label=\faCheckCircle, leftmargin=*]
-    \item \textbf{Python}, \textbf{JavaScript}, \textbf{SQL}, \textbf{Django}, \textbf{Flask}, \textbf{RESTful APIs}, \textbf{Microservices}, \textbf{AWS}, \textbf{Azure}, \textbf{Problem-solving}, \textbf{Analytical skills}, \textbf{Communication}, \textbf{Teamwork}
-    \item Typescript, Go, HTML5, CSS3, React.js, Next.js, Tailwind CSS, Bootstrap, Node.js, Express.js, PHP, WebSockets, MongoDB, MySQL, PostgreSQL, Firebase, Git, GitHub Actions, Docker, CI/CD Concepts, Nginx, AWS EC2, Vercel, Netlify, scikit-learn, TensorFlow, Pandas, NumPy, Matplotlib, Data Preprocessing, Model Evaluation, Supervised Learning, Postman, Visual Studio Code, Figma, Linux/Ubuntu CLI, Agile Methodologies, Debugging, Testing, API Integration, Responsive Web Design, Web Security Practices, MERN Stack, Gemini API, C, Cpp
+\begin{itemize}
+    \itemsep0em 
+    \item \skills
 \end{itemize}
 
+% Experience Section
 \section{Experience}
-\begin{itemize}[label=\faBriefcase, leftmargin=*]
-    \item \textbf{Deloitte} \hfill January 2025 – April 2025 \\
-        \textit{ADMM Intern}
-        \begin{itemize}[label=\faAngleRight, leftmargin=*]
-            \item Analyzed complex datasets to uncover actionable insights, supporting data-driven decision-making for client and internal projects, leading to a \textbf{15\% improvement in project outcomes}.
-            \item Designed and automated data processing workflows, reducing manual reporting time by \textbf{30\%} and improving data accuracy.
-            \item Developed scalable internal tools and features to enhance data accessibility, streamline operations, and support business growth.
-            \item Collaborated with cross-functional teams to optimize reporting and analytics processes, improving project delivery efficiency.
-        \end{itemize}
-    \item \textbf{CCBUL LLP} \hfill August 2023 – Oct 2023 \\
-        \textit{Software Engineer Intern}
-        \begin{itemize}[label=\faAngleRight, leftmargin=*]
-            \item Designed and developed responsive front-end interfaces to improve user experience and accessibility across web platforms.
-            \item Built and integrated scalable back-end services, including \textbf{RESTful APIs}, to support real-time data processing and complex business logic, enhancing application functionality by \textbf{25\%}.
-            \item Optimized performance for key application workflows, reducing page load times and API response times by up to \textbf{40\%}.
-            \item Collaborated with product managers and senior engineers to deliver new features, resulting in successful deployment of a large-scale client project. Gained experience with \textbf{microservices} architecture during the integration of back-end services.
-        \end{itemize}
+\begin{itemize}
+    \item \textbf{\companyone} | \textit{\roleone} | \yearone
+    \begin{itemize}
+        \item \responone
+    \end{itemize}
+    \listspace
+    \item \textbf{\companytwo} | \textit{\roletwo} | \yeartwo
+    \begin{itemize}
+        \item \respontwo
+    \end{itemize}
+    \listspace
 \end{itemize}
 
+% Projects Section
+\section{Projects}
+\begin{itemize}
+    \item \textbf{\projectone}
+    \begin{itemize}
+        \item \projectdetailsone
+    \end{itemize}
+    \listspace
+    \item \textbf{\projecttwo}
+    \begin{itemize}
+        \item \projectdetailstwo
+    \end{itemize}
+     \listspace
+     \item \textbf{\projectthree}
+    \begin{itemize}
+        \item \projectdetailsthree
+    \end{itemize}
+    \listspace
+\end{itemize}
+
+% Education Section
 \section{Education}
-\begin{itemize}[label=\faGraduationCap, leftmargin=*]
-    \item \textbf{Terna College of Engineering} \hfill 2021 – 2025 \\
-        \textit{BE in Computer Science}
-        \begin{itemize}[label=\faAngleRight, leftmargin=*]
-            \item CGPA: 7.9/10
-            \item Coursework: Computer Architecture, Comparison of Learning Algorithms, Computational Theory
-        \end{itemize}
-    \item \textbf{RKT College of Science Commerce and Arts} \hfill 2019 – 2021 \\
-        \textit{HSC in Science}
-        \begin{itemize}[label=\faAngleRight, leftmargin=*]
-            \item Percentage: 90/100
-        \end{itemize}
-    \item \textbf{Model English High School} \hfill 2021 \\
-        \textit{SSC}
-        \begin{itemize}[label=\faAngleRight, leftmargin=*]
-            \item Percentage: 86/100
-        \end{itemize}
+\begin{itemize}
+    \item \textbf{\educationi} | \textit{\educationd} | \educationy
+    \begin{itemize}
+        \item \educationdetails
+    \end{itemize}
+    \listspace
+     \item \textbf{\educationii} | \textit{\educationdi} | \educationyi
+    \begin{itemize}
+        \item \educationdetailsi
+    \end{itemize}
+    \listspace
+     \item \textbf{\educationiii} | \textit{\educationdii} | \educationyii
+    \begin{itemize}
+        \item \educationdetailsii
+    \end{itemize}
+    \listspace
+\end{itemize}
+
+% Publications Section
+\section{Publications}
+\begin{itemize}
+    \item \textbf{\publicationtitle} | \publicationauthors | \publicationdate
+    \begin{itemize}
+        \item \href{publicationlink}{\publicationlink}
+    \end{itemize}
+    \listspace
 \end{itemize}
 
 \end{document}

@@ -1,0 +1,258 @@
+=== ATS COMPATIBILITY ANALYSIS ===
+
+JOB DESCRIPTION ANALYSIS:
+--------------------------------------------------
+```json
+{
+    "job_title": "Software Engineer",
+    "company": "Wealth Wizards",
+    "industry": "Financial Technology (FinTech)",
+    "role_level": "Entry-Level to Mid-Level",
+    "required_skills": {
+        "technical": [
+            "Node.js",
+            "Typescript",
+            "Javascript",
+            "React",
+            "REST APIs",
+            "Relational Databases",
+            "NoSQL Databases",
+            "Serverless Architecture (preferably AWS)",
+            "Unit Testing",
+            "Integration Testing",
+            "SOLID principles",
+            "Security",
+            "Reliability",
+            "Scalability",
+            "Maintainability",
+            "Accessibility",
+            "Agile Delivery Principles",
+            "Coding Standards",
+            "Engineering Principles",
+            "Refactoring",
+            "Abstraction",
+            "Facades"
+        ],
+        "soft": [
+            "Communication (written and verbal)",
+            "Teamwork",
+            "Collaboration",
+            "Problem-solving",
+            "Analytical skills",
+            "Ownership",
+            "Self-learning",
+            "Resilience",
+            "Adaptability",
+            "Pair Programming",
+            "Time Management",
+            "Prioritization",
+            "Advocacy",
+            "Mentoring",
+            "Coaching",
+            "Knowledge Sharing",
+            "Technical Curiosity"
+        ],
+        "tools": [
+            "Amazon Web Services (AWS)"
+        ]
+    },
+    "responsibilities": [
+        "Designing, building, testing, deploying, and running live services",
+        "Participating in design discussions",
+        "Writing code",
+        "Pairing with other engineers",
+        "Reviewing pull requests (PRs)",
+        "Solving problems",
+        "Ensuring a high standard of quality",
+        "Assisting in monitoring services in production",
+        "Delivering software for the team",
+        "Working closely with the Lead Software Engineer and Product Manager",
+        "Applying Agile delivery principles",
+        "Building, supporting, and maintaining products continuously delivered into production",
+        "Writing comprehensible, SOLID, well-tested code",
+        "Partnering effectively with team members to deliver commitments",
+        "Participating in technical discussions during task analysis, design meetings, and code reviews",
+        "Actively following, advocating, and improving coding standards and engineering principles",
+        "Using deliberate analysis and planning to tackle complex situations",
+        "Ensuring all aspects of product delivery are covered, especially non-functional quality attributes"
+    ],
+    "requirements": {
+        "education": [],
+        "experience": [
+            "Experience with Node.js, Typescript, Javascript and React",
+            "Experience in developing back-end REST APIs and working with relational or NoSQL databases",
+            "Experience in refactoring systems towards a cleaner architecture",
+            "Experience with unit and integration testing",
+            "Experience working as a software engineer in a team environment"
+        ],
+        "certifications": []
+    },
+    "company_values": [
+        "Empowerment of engineering teams",
+        "Investment in team member development",
+        "Collaborative learning culture",
+        "Psychological safety",
+        "Sustainable work/life balance",
+        "Making financial advice affordable and accessible to everyone"
+    ],
+    "keywords": [
+        "Software Engineer",
+        "Node.js",
+        "Typescript",
+        "Javascript",
+        "React",
+        "REST APIs",
+        "Agile",
+        "AWS",
+        "Serverless",
+        "Refactoring",
+        "SOLID",
+        "Unit Testing",
+        "Integration Testing",
+        "Financial Advice",
+        "SaaS",
+        "Teamwork",
+        "Collaboration",
+        "Problem-solving"
+    ],
+    "nice_to_have": [
+        "Exposure to serverless architecture, preferably with Amazon Web Services",
+        "Knowledge of data structures and data-driven design",
+        "Regular contributions to FoSS projects or writing technical articles",
+        "Exposure to accessibility best practices",
+        "Understanding of financial regulations"
+    ]
+}
+```
+
+ATS SCORING ANALYSIS:
+--------------------------------------------------
+```json
+{
+    "overall_ats_score": "88%",
+    "section_scores": {
+        "technical_skills": "92% - Strong alignment with required technical skills. Demonstrates proficiency in Node.js, Typescript, Javascript, React, and related technologies. Gaps exist in specific AWS serverless experience.",
+        "experience_relevance": "85% - Relevant experience in software engineering roles with exposure to front-end and back-end development. Strong project descriptions highlight key achievements and technologies. Could benefit from more explicit alignment with FinTech or financial services.",
+        "education_match": "75% - Bachelor's degree in Computer Science is relevant. No specific certifications are listed, which could be a minor area for improvement if the role highly values specific certifications.",
+        "keyword_optimization": "90% - High keyword density and strategic distribution of relevant keywords throughout the resume. Opportunities exist to further optimize the phrasing to mirror the job description's language more closely."
+    },
+    "keyword_analysis": {
+        "exact_matches": [
+            "Node.js",
+            "Javascript",
+            "React",
+            "REST APIs",
+            "Agile",
+            "Typescript",
+            "Unit Testing",
+            "Integration Testing",
+            "Refactoring",
+            "Problem-solving",
+            "Collaboration"
+        ],
+        "semantic_matches": [
+            "Frontend Development (maps to React)",
+            "Backend Development (maps to Node.js)",
+            "MongoDB (maps to NoSQL Databases)",
+            "MySQL (maps to Relational Databases)",
+            "AWS EC2 (maps to Amazon Web Services)",
+            "API Integration (maps to REST APIs)",
+            "Teamwork (maps to Collaboration)",
+            "Coding (maps to Writing Code)",
+            "Debugging (maps to Problem-solving)"
+        ],
+        "missing_critical": [
+            "Serverless Architecture",
+            "SOLID principles",
+            "Security",
+            "Reliability",
+            "Scalability",
+            "Maintainability",
+            "Accessibility",
+            "Engineering Principles",
+            "Facades",
+            "AWS"
+        ],
+        "missing_moderate": [
+            "Relational Databases",
+            "NoSQL Databases",
+            "Agile Delivery Principles",
+            "Coding Standards",
+            "Time Management",
+            "Prioritization",
+            "Pair Programming"
+        ],
+        "missing_minor": [
+            "Knowledge Sharing",
+            "Technical Curiosity",
+            "Ownership",
+            "Self-learning",
+            "Resilience",
+            "Adaptability",
+            "Advocacy",
+            "Mentoring",
+            "Coaching"
+        ]
+    },
+    "content_analysis": {
+        "strengths": [
+            "Strong technical skills in relevant technologies (Node.js, React, Javascript, Typescript).",
+            "Demonstrated experience in both front-end and back-end development.",
+            "Project descriptions highlight tangible achievements and quantifiable results.",
+            "Experience with Agile methodologies and team collaboration.",
+            "Publication showcases research and analytical abilities."
+        ],
+        "gaps": [
+            "Limited explicit experience with Serverless Architectures, specifically within AWS.",
+            "Lack of direct mention of SOLID principles or specific security/reliability practices.",
+            "Limited demonstration of experience within the FinTech industry.",
+            "Soft skills are not explicitly showcased through examples or achievements."
+        ],
+        "opportunities": [
+            "Incorporate keywords related to Serverless Architectures and AWS into project descriptions.",
+            "Provide specific examples of applying SOLID principles or implementing security best practices in past projects.",
+            "Quantify achievements whenever possible to demonstrate impact.",
+            "Tailor the resume to highlight relevant experience within the financial services domain (if applicable).",
+            "Incorporate soft skills into the accomplishment statements, for example, 'Collaborated effectively with a team of 5 engineers to deliver...'."
+        ]
+    },
+    "optimization_recommendations": {
+        "high_priority": [
+            "Incorporate 'Serverless Architecture' and 'AWS' into project descriptions, detailing any exposure, even if basic. Mention specific AWS services used (e.g., Lambda, API Gateway).",
+            "Add a section or modify existing sections to explicitly mention adherence to 'SOLID Principles' and describe how they were applied in previous projects. Example: 'Designed and implemented RESTful APIs adhering to SOLID principles, resulting in improved code maintainability and reduced technical debt.'",
+            "Include quantifiable results whenever possible (e.g., 'Improved application performance by 20% through code refactoring').",
+            "Explicitly state experience with 'Security' best practices and 'Reliability' measures implemented in projects. Example: 'Ensured application security by implementing authentication and authorization protocols, mitigating potential vulnerabilities.'"
+        ],
+        "medium_priority": [
+            "Expand on experience with 'Relational Databases' and 'NoSQL Databases,' specifying the types of databases used and the scale of the data handled.",
+            "Include examples of applying 'Agile Delivery Principles' in project workflows, such as participating in daily stand-ups, sprint planning, and retrospectives.",
+            "Add details about adhering to specific 'Coding Standards' and participating in code reviews to ensure code quality.",
+            "Incorporate examples of effective 'Time Management' and 'Prioritization' skills in project management.",
+            "Mention 'Pair Programming' experience, if applicable, and highlight the benefits gained (e.g., knowledge sharing, improved code quality)."
+        ],
+        "low_priority": [
+            "Add soft skills like 'Knowledge Sharing,' 'Technical Curiosity,' 'Ownership,' 'Self-learning,' 'Resilience,' 'Adaptability,' 'Advocacy,' 'Mentoring,' and 'Coaching' to the skills section or integrate them into accomplishment statements.",
+            "Consider adding a brief statement about your understanding of 'Engineering Principles' and their importance in software development.",
+            "If applicable, mention any contributions to open-source projects or technical articles written.",
+            "If you have any understanding of financial regulations, briefly mention it to demonstrate interest in the FinTech industry."
+        ],
+        "content_strategy": [
+            "Tailor the resume content to directly address the key requirements and responsibilities outlined in the job description.",
+            "Use action verbs and quantifiable results to showcase your achievements and impact in previous roles.",
+            "Maintain a consistent and professional tone throughout the resume.",
+            "Ensure the resume is free of grammatical errors and typos.",
+            "Consider adding a brief summary or objective statement at the beginning of the resume to highlight your key skills and career goals, aligning them with the company's mission and values."
+        ]
+    }
+}
+```
+
+OPTIMIZATION SUMMARY:
+--------------------------------------------------
+The resume has been optimized based on the ATS analysis above.
+Key improvements include:
+- Strategic keyword integration
+- Enhanced skill presentation
+- Improved achievement quantification
+- Better alignment with job requirements
+- Professional formatting optimization

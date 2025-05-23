@@ -1,57 +1,63 @@
 {
-  "ats_score": 78,
+  "ats_score": 78.5,
   "section_scores": {
     "skills": 85,
     "experience": 75,
-    "education": 70
+    "education": 60
   },
   "exact_matches": [
-    "Python",
-    "JavaScript",
-    "SQL",
-    "Django",
-    "Flask",
-    "RESTful APIs",
-    "AWS",
-    "Communication",
-    "Teamwork"
+    "Programming",
+    "Engineering"
   ],
   "semantic_matches": [
     {
-      "resume": "Cpp",
-      "job_description": "Problem-solving"
+      "resume": "Software Engineer",
+      "job_description": "Engineer"
     },
     {
-      "resume": "Analytical skills",
-      "job_description": "Analytical skills"
+      "resume": "Data processing",
+      "job_description": "File / error checking"
     },
     {
-      "resume": "Agile Methodologies",
-      "job_description": "Fast-paced environment"
+      "resume": "application workflows",
+      "job_description": "system"
+    },
+    {
+      "resume": "internal tools",
+      "job_description": "system"
     }
   ],
   "missing_keywords": [
     {
-      "keyword": "Microservices",
+      "keyword": "AI based system development",
       "priority": "high"
     },
     {
-      "keyword": "Azure",
+      "keyword": "Recommendation letter writing (AI)",
       "priority": "medium"
     },
     {
-      "keyword": "3+ years of experience in software development",
-      "priority": "high"
+      "keyword": "Document formatting (AI)",
+      "priority": "medium"
+    },
+    {
+      "keyword": "File / error checking (AI)",
+      "priority": "medium"
+    },
+    {
+      "keyword": "Document naming (AI)",
+      "priority": "medium"
+    },
+    {
+      "keyword": "Remote or hybrid work capability",
+      "priority": "low"
     }
   ],
-  "experience_alignment": "The candidate has relevant internship experience in software engineering roles, demonstrating skills in front-end and back-end development. The experience aligns well with the job description, although the candidate should emphasize projects that showcase experience with microservices.",
-  "education_alignment": "The candidate's Bachelor's degree in Computer Science aligns with the job requirements. Highlighting relevant coursework (e.g., distributed systems) could further strengthen the match.",
   "improvement_suggestions": [
-    "Quantify achievements in resume using metrics to demonstrate impact, e.g., 'Improved application performance by X%'.",
-    "Add a project or experience that showcases experience with microservices to address the missing 'Microservices' keyword.",
-    "Explicitly mention 'Azure' in the resume if the candidate has any experience with it, even if it's a personal project.",
-    "In the resume summary or in the experience descriptions, explicitly state or rephrase to reflect '3+ years of experience in software development' to meet the requirement. Even internships can contribute towards this if framed correctly.",
-    "Tailor the resume to emphasize experience with cloud platforms (AWS, Azure).",
-    "Include a brief summary at the beginning of the resume highlighting key skills and experience relevant to the job description."
+    "Explicitly mention experience with AI-based system development in the resume's experience section. Quantify the impact of any AI-related projects.",
+    "Incorporate the keywords 'Recommendation letter writing,' 'Document formatting,' 'File / error checking,' and 'Document naming' into the resume, especially if the candidate has relevant experience, even if not explicitly AI-focused.",
+    "Add a line in the summary or skills section indicating willingness or experience with remote/hybrid work environments.",
+    "Highlight any projects where you automated tasks or processes, as this aligns with the job's focus on automating compliance and administrative services with AI.",
+    "Consider adding a brief project or personal interest section to showcase AI projects, even if they are academic or personal projects."
   ]
 }

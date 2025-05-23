@@ -1,0 +1,202 @@
+{
+  "name": "Dhiraj Sahu",
+  "email": "dhirajksahu01@gmail.com",
+  "phone": "9324211798",
+  "location": "Mumbai , Maharashtra",
+  "portfolio": "https://dhirajsahuportfolio.netlify.app/",
+  "linkedin": "https://www.linkedin.com/in/dhiraj-sahu-420628258/",
+  "github": "https://github.com/DhirajSahu18",
+  "about_me": "A Full Stack Developer with 1.5 years of experience in building scalable and efficient web applications, particularly within Financial Technology (FinTech). Proficient in both front-end and back-end technologies, with a strong emphasis on writing clean, maintainable code adhering to SOLID principles. Experienced in Agile Delivery Principles and possess a developing understanding of Serverless Architecture. Committed to solving complex problems, ensuring application security and reliability, and continuously improving technical skills through real-world projects.",
+  "skills": {
+    "Languages": [
+      "Typescript",
+      "Javascript",
+      "Node.js",
+      "React",
+      "Python",
+      "Java",
+      "Go",
+      "C",
+      "Cpp",
+      "PHP"
+    ],
+    "Front-End": [
+      "React.js",
+      "Next.js",
+      "HTML5",
+      "CSS3",
+      "JavaScript",
+      "Typescript",
+      "Tailwind CSS",
+      "Bootstrap",
+      "Accessibility"
+    ],
+    "Back-End": [
+      "Node.js",
+      "Express.js",
+      "RESTful APIs",
+      "WebSockets",
+      "Serverless Architecture",
+      "PHP",
+      "Django",
+      "Flask"
+    ],
+    "Databases": [
+      "Relational Databases",
+      "NoSQL Databases",
+      "MongoDB",
+      "MySQL",
+      "PostgreSQL",
+      "Firebase"
+    ],
+    "DevOps / Deployment": [
+      "AWS",
+      "Git",
+      "GitHub Actions",
+      "Docker",
+      "CI/CD Concepts",
+      "Nginx",
+      "AWS EC2",
+      "Vercel",
+      "Netlify"
+    ],
+    "Machine Learning": [
+      "Python",
+      "scikit-learn",
+      "TensorFlow",
+      "Pandas",
+      "NumPy",
+      "Matplotlib",
+      "Data Preprocessing",
+      "Model Evaluation",
+      "Supervised Learning"
+    ],
+    "Tools & Platforms": [
+      "Postman",
+      "Visual Studio Code",
+      "Figma",
+      "Linux/Ubuntu CLI"
+    ],
+    "Other Skills": [
+      "Agile Methodologies",
+      "Agile Delivery Principles",
+      "Debugging & Testing",
+      "API Integration",
+      "Responsive Web Design",
+      "Web Security Practices",
+      "Coding Standards",
+      "Engineering Principles",
+      "SOLID Principles",
+      "Security",
+      "Reliability",
+      "Scalability",
+      "Maintainability",
+      "Time Management",
+      "Prioritization",
+      "Pair Programming"
+    ]
+  },
+  "experience": [
+    {
+      "role": "ADMM Intern",
+      "company": "Deloitte",
+      "location": "Thane, Maharashtra",
+      "duration": "January 2025–April 2025",
+      "responsibilities": [
+        "Analyzed complex datasets to uncover actionable insights, supporting data-driven decision-making for client and internal projects, improving strategic planning by 15%.",
+        "Designed and automated data processing workflows, reducing manual reporting time by 30% and improving data accuracy, ensuring data reliability for critical business functions.",
+        "Developed scalable internal tools and features to enhance data accessibility, streamline operations, and support business growth, aligning with SOLID principles for maintainable code.",
+        "Collaborated with cross-functional teams to optimize reporting and analytics processes, improving project delivery efficiency and ensuring adherence to coding standards."
+      ]
+    },
+    {
+      "role": "Software Engineer Intern",
+      "company": "CCBUL LLP",
+      "location": "Bangalore , India",
+      "duration": "August 2023 – Oct 2023",
+      "responsibilities": [
+        "Designed and developed responsive front-end interfaces using React.js and Typescript to improve user experience and accessibility across web platforms, resulting in a 20% increase in user engagement.",
+        "Built and integrated scalable back-end services using Node.js and Express.js to support real-time data processing and complex business logic, ensuring application scalability for future growth.",
+        "Optimized performance for key application workflows, reducing page load times and API response times by up to 40% through code refactoring and efficient database queries, enhancing system reliability.",
+        "Collaborated with product managers and senior engineers to deliver new features, resulting in successful deployment of a large-scale client project, adhering to Agile delivery principles and maintaining code security."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "BE in Computer Science",
+      "institution": "Terna College of Engineering",
+      "year": "2021 – 2025",
+      "gpa": "7.9/10",
+      "coursework": "Computer Architecture, Comparison of Learning Algorithms, Computational Theory"
+    },
+    {
+      "degree": "HSC in Science",
+      "institution": "RKT College of Science Commerce and Arts",
+      "year": "2019 – 2021",
+      "gpa": null,
+      "coursework": "Percentage : 90/100"
+    },
+    {
+      "degree": "SSC",
+      "institution": "Model English High School",
+      "year": "2021",
+      "gpa": null,
+      "coursework": "Percentage: 86/100"
+    }
+  ],
+  "projects": [
+    {
+      "title": "Bypass-Prevention System for Secure Event Management",
+      "description": [
+        "Engineered a scalable event registration system that securely handled over 14,000 users daily for 15 consecutive days, with encrypted QR code generation and rule distribution, ensuring high availability and reliability.",
+        "Built real-time QR scanning and user verification workflows to prevent bypassing, ensuring 100% authenticity at event check-ins and minimizing fraudulent access.",
+        "Automated participant data export and timestamp tracking into Excel reports, enabling efficient auditing and operational transparency, improving data-driven decision-making.",
+        "Leveraged AWS EC2 for deployment and AWS SES for email notifications, demonstrating basic exposure to AWS services. The architecture also considered serverless components for future scalability.",
+        "Tools and Technologies: MERN Stack, Tailwind CSS, AWS (EC2, SES), Vercel, Nginx, Firebase Authentication"
+      ],
+      "technologies": "MERN Stack, Tailwind CSS, AWS (EC2, SES), Vercel, Nginx, Firebase Authentication",
+      "links": {
+        "Deployment": "https://www.revivefest.in/",
+        "GitHub": "https://github.com/DhirajSahu18/reviveFrontend"
+      }
+    },
+    {
+      "title": "AI-Powered Task Management Chatbot",
+      "description": [
+        "Architected an AI-driven chatbot that allows users to seamlessly create reminders and notes using natural language; increased user retention by 25% within the first three months of deployment, contributing to overall platform growth.",
+        "Automated scheduled task execution and timely reminders using server-side cronjobs, ensuring reliability without manual intervention.",
+        "Orchestrated a serverless backend architecture leveraging Node.js and MongoDB for a chatbot, enabling 200 concurrent user sessions with sub-300ms response times, thereby enhancing user engagement and satisfaction.",
+        "Implemented security best practices, including input validation and data sanitization, to protect against potential vulnerabilities.",
+        "Tools and Technologies: Node.js, Express, MongoDB, Gemini API, Cron, Tailwind CSS, Firebase Authentication"
+      ],
+      "technologies": "Node.js, Express, MongoDB, Gemini API, Cron, Tailwind CSS, Firebase Authentication",
+      "links": {
+        "GitHub": "https://github.com/DhirajSahu18/chatAssistant",
+        "Deployment": null
+      }
+    },
+    {
+      "title": "Additional Projects",
+      "description": [
+        "Facial Attendance System",
+        "Qr Based Food Ordering and Management",
+        "Online Auction System",
+        "Credit fraud Detection"
+      ],
+      "technologies": null,
+      "links": {
+        "GitHub": "https://github.com/DhirajSahu18/faceRec",
+        "Deployment": null
+      }
+    }
+  ],
+  "publications": [
+    {
+      "title": "Machine Learning Techniques for Breast Cancer Detection",
+      "authors": "Dhiraj Sahu, Prajwal Naik",
+      "date": "Jan 2025",
+      "link": "https://www.ijcrt.org/viewfull.php?&p_id=IJCRT2501438"
+    }
+  ]
+}

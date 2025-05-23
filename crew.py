@@ -1,10 +1,19 @@
 import os
 import re
 import json
-import subprocess
 from crewai import Agent, Task, Crew, LLM
 from pdfminer.high_level import extract_text
 from dotenv import load_dotenv
+
+# PDF generation imports
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Flowable
+from reportlab.lib.enums import TA_CENTER, TA_LEFT
+from reportlab.lib.colors import HexColor
+from reportlab.pdfgen import canvas
+from reportlab.lib import colors
 
 load_dotenv()
 
@@ -16,7 +25,6 @@ llm = LLM(
 
 def extract_company_name(jd_text: str) -> str:
     """Extract company name from job description with improved pattern matching."""
-    # Try to match company name patterns like "at Company", "@ Company", "with Company"
     patterns = [
         r'\b(at|@)\s+([A-Z][\w& ]+)',
         r'position\s+(at|with)\s+([A-Z][\w& ]+)',
@@ -28,108 +36,240 @@ def extract_company_name(jd_text: str) -> str:
         match = re.search(pattern, jd_text, re.IGNORECASE)
         if match:
             groups = match.groups()
-            # Return the company name (last group in each pattern)
             return groups[-1].strip().replace(" ", "_")
     
-    return "Company"  # Default fallback
+    return "Company"
 
-def resume_json_to_latex(resume_json: dict) -> str:
-    """Convert resume JSON to LaTeX format with improved formatting."""
-    # Format skills with better spacing
-    skills = ', '.join(resume_json.get("skills", []))
+class BulletPoint(Flowable):
+    """Custom flowable for bullet points"""
+    def __init__(self, text, bullet_char="•", indent=20):
+        Flowable.__init__(self)
+        self.text = text
+        self.bullet_char = bullet_char
+        self.indent = indent
+        
+    def draw(self):
+        self.canv.drawString(0, 0, self.bullet_char)
+        self.canv.drawString(self.indent, 0, self.text)
+        
+    def wrap(self, availWidth, availHeight):
+        return availWidth, 14
+
+def create_resume_pdf(resume_json: dict, filename: str):
+    """Create a professional resume PDF using ReportLab."""
+    doc = SimpleDocTemplate(
+        filename,
+        pagesize=letter,
+        rightMargin=inch,
+        leftMargin=inch,
+        topMargin=inch,
+        bottomMargin=inch
+    )
     
-    # Format education with better structure
-    education_items = resume_json.get("education", [])
-    education = '\n\\begin{itemize}\n' + \
-                '\n'.join([f'\\item {edu}' for edu in education_items]) + \
-                '\n\\end{itemize}' if education_items else 'No education information available.'
+    # Define styles
+    styles = getSampleStyleSheet()
     
-    # Format experience with better structure and formatting
-    experience_items = resume_json.get("experience", [])
-    if experience_items:
-        experience = ''
-        for exp in experience_items:
-            experience += f"\\subsection*{{{exp.get('role', 'Role')} at {exp.get('company', 'Company')}, {exp.get('year', 'Year')}}}\n"
-            experience += "\\begin{itemize}\n"
-            # Split responsibilities into bullet points if they contain semicolons or periods
-            responsibilities = exp.get('responsibilities', '')
-            resp_items = re.split(r'[;.]\s+', responsibilities)
-            resp_items = [r.strip() for r in resp_items if r.strip()]
+    # Custom styles
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Title'],
+        fontSize=24,
+        spaceAfter=12,
+        alignment=TA_CENTER,
+        textColor=HexColor('#2C3E50')
+    )
+    
+    contact_style = ParagraphStyle(
+        'Contact',
+        parent=styles['Normal'],
+        fontSize=11,
+        alignment=TA_CENTER,
+        spaceAfter=20
+    )
+    
+    section_header_style = ParagraphStyle(
+        'SectionHeader',
+        parent=styles['Heading2'],
+        fontSize=14,
+        spaceAfter=8,
+        spaceBefore=16,
+        textColor=HexColor('#2C3E50'),
+        borderWidth=1,
+        borderColor=HexColor('#2C3E50'),
+        borderPadding=4
+    )
+    
+    body_style = ParagraphStyle(
+        'Body',
+        parent=styles['Normal'],
+        fontSize=10,
+        spaceAfter=6,
+        leftIndent=0
+    )
+    
+    bullet_style = ParagraphStyle(
+        'Bullet',
+        parent=styles['Normal'],
+        fontSize=10,
+        spaceAfter=4,
+        leftIndent=20,
+        bulletIndent=10
+    )
+    
+    # Build the document
+    story = []
+    
+    # Name
+    name = resume_json.get('name', 'Candidate Name')
+    story.append(Paragraph(name, title_style))
+    
+    # Contact information
+    email = resume_json.get('email', 'email@example.com')
+    phone = resume_json.get('phone', '(123) 456-7890')
+    contact_info = f"✉ {email} | ☎ {phone}"
+    story.append(Paragraph(contact_info, contact_style))
+    
+    # Skills section
+    skills = resume_json.get('skills', [])
+    if skills:
+        story.append(Paragraph("SKILLS", section_header_style))
+        skills_text = " • ".join(skills)
+        story.append(Paragraph(skills_text, body_style))
+        story.append(Spacer(1, 12))
+    
+    # Education section
+    education = resume_json.get('education', [])
+    if education:
+        story.append(Paragraph("EDUCATION", section_header_style))
+        for edu in education:
+            story.append(Paragraph(f"• {edu}", bullet_style))
+        story.append(Spacer(1, 12))
+    
+    # Experience section
+    experience = resume_json.get('experience', [])
+    if experience:
+        story.append(Paragraph("EXPERIENCE", section_header_style))
+        for exp in experience:
+            # Job title and company
+            job_title = f"<b>{exp.get('role', 'Role')}</b> at {exp.get('company', 'Company')} ({exp.get('year', 'Year')})"
+            story.append(Paragraph(job_title, body_style))
             
-            for resp in resp_items:
-                if resp and not resp.endswith('.'):
-                    resp += '.'
-                experience += f"\\item {resp}\n"
-            experience += "\\end{itemize}\n"
-    else:
-        experience = 'No experience information available.'
+            # Responsibilities
+            responsibilities = exp.get('responsibilities', '')
+            if responsibilities:
+                # Split responsibilities into bullet points
+                resp_items = re.split(r'[;.]\s+', responsibilities)
+                resp_items = [r.strip() for r in resp_items if r.strip()]
+                
+                for resp in resp_items:
+                    if resp and not resp.endswith('.'):
+                        resp += '.'
+                    story.append(Paragraph(f"• {resp}", bullet_style))
+            
+            story.append(Spacer(1, 8))
+    
+    # Build PDF
+    doc.build(story)
+    return True
 
-    return f"""
-\\documentclass{{article}}
-\\usepackage[margin=1in]{{geometry}}
-\\usepackage{{hyperref}}
-\\usepackage{{enumitem}}
-\\usepackage{{fontawesome5}}
-\\usepackage{{titlesec}}
-\\usepackage{{color}}
-\\definecolor{{linkcolor}}{{HTML}}{{0066cc}}
-\\hypersetup{{colorlinks=true, linkcolor=linkcolor, urlcolor=linkcolor}}
-
-\\titleformat{{\\section}}{{\\Large\\bfseries\\color{{linkcolor}}}}{{}}{{0em}}{{\\underline}}
-
-\\begin{{document}}
-
-\\begin{{center}}
-\\textbf{{\\Huge {resume_json.get('name', 'Candidate')}}}
-
-\\vspace{{0.5em}}
-\\faEnvelope\\ {resume_json.get('email', 'N/A')} \\quad \\faPhone\\ {resume_json.get('phone', 'N/A')}
-\\end{{center}}
-
-\\section*{{Skills}}
-{skills}
-
-\\section*{{Education}}
-{education}
-
-\\section*{{Experience}}
-{experience}
-
-\\end{{document}}
-"""
-
-def compile_latex_to_pdf(tex_file_path):
-    """Compile LaTeX file to PDF using pdflatex."""
-    try:
-        # Get the directory containing the tex file
-        directory = os.path.dirname(tex_file_path)
-        
-        # Run pdflatex command (twice to ensure references are resolved)
-        subprocess.run(
-            ['pdflatex', '-interaction=nonstopmode', tex_file_path],
-            cwd=directory,
-            check=True,
-            capture_output=True
-        )
-        subprocess.run(
-            ['pdflatex', '-interaction=nonstopmode', tex_file_path],
-            cwd=directory,
-            check=True,
-            capture_output=True
-        )
-        
-        return True
-    except subprocess.CalledProcessError as e:
-        print(f"Error compiling {tex_file_path}: {e}")
-        print(f"pdflatex output: {e.stdout.decode('utf-8', errors='ignore')}")
-        print(f"pdflatex error: {e.stderr.decode('utf-8', errors='ignore')}")
-        return False
-    except Exception as e:
-        print(f"Unexpected error compiling {tex_file_path}: {e}")
-        return False
+def create_cover_letter_pdf(resume_json: dict, job_description: str, filename: str):
+    """Create a professional cover letter PDF using ReportLab."""
+    doc = SimpleDocTemplate(
+        filename,
+        pagesize=letter,
+        rightMargin=inch,
+        leftMargin=inch,
+        topMargin=inch,
+        bottomMargin=inch
+    )
+    
+    styles = getSampleStyleSheet()
+    
+    # Custom styles
+    header_style = ParagraphStyle(
+        'Header',
+        parent=styles['Normal'],
+        fontSize=11,
+        alignment=TA_LEFT,
+        spaceAfter=20
+    )
+    
+    date_style = ParagraphStyle(
+        'Date',
+        parent=styles['Normal'],
+        fontSize=11,
+        alignment=TA_LEFT,
+        spaceAfter=20
+    )
+    
+    body_style = ParagraphStyle(
+        'Body',
+        parent=styles['Normal'],
+        fontSize=11,
+        spaceAfter=12,
+        alignment=TA_LEFT
+    )
+    
+    story = []
+    
+    # Header with contact info
+    name = resume_json.get('name', 'Candidate Name')
+    email = resume_json.get('email', 'email@example.com')
+    phone = resume_json.get('phone', '(123) 456-7890')
+    
+    header_text = f"""<b>{name}</b><br/>
+{email}<br/>
+{phone}"""
+    story.append(Paragraph(header_text, header_style))
+    
+    # Date
+    from datetime import datetime
+    current_date = datetime.now().strftime("%B %d, %Y")
+    story.append(Paragraph(current_date, date_style))
+    
+    # Company info
+    company_name = extract_company_name(job_description)
+    company_address = f"""Hiring Manager<br/>
+{company_name}"""
+    story.append(Paragraph(company_address, header_style))
+    
+    # Opening
+    story.append(Paragraph("Dear Hiring Manager,", body_style))
+    
+    # Body paragraphs
+    opening_para = f"I am writing to express my strong interest in the Software Engineer position at {company_name}. With my comprehensive background in software development and proven track record of delivering innovative solutions, I am confident that I would be a valuable addition to your team."
+    story.append(Paragraph(opening_para, body_style))
+    
+    # Skills alignment paragraph
+    skills = resume_json.get('skills', [])
+    if skills:
+        key_skills = ', '.join(skills[:5])  # Top 5 skills
+        skills_para = f"My technical expertise includes {key_skills}, which directly aligns with the requirements outlined in your job posting. I have successfully applied these skills in various projects and collaborative environments, consistently delivering high-quality results that exceed expectations."
+        story.append(Paragraph(skills_para, body_style))
+    
+    # Experience paragraph
+    experience = resume_json.get('experience', [])
+    if experience:
+        recent_exp = experience[0] if experience else {}
+        exp_para = f"In my recent role as {recent_exp.get('role', 'a developer')}, I have demonstrated my ability to work effectively in team environments while managing complex technical challenges. My experience has prepared me well for the responsibilities and opportunities that this position offers."
+        story.append(Paragraph(exp_para, body_style))
+    
+    # Closing paragraph
+    closing_para = f"I am excited about the opportunity to contribute to {company_name}'s continued success and innovation. I would welcome the chance to discuss how my skills, experience, and passion for technology can benefit your team. Thank you for considering my application."
+    story.append(Paragraph(closing_para, body_style))
+    
+    # Sign-off
+    story.append(Spacer(1, 20))
+    story.append(Paragraph("Sincerely,", body_style))
+    story.append(Spacer(1, 20))
+    story.append(Paragraph(name, body_style))
+    
+    # Build PDF
+    doc.build(story)
+    return True
 
 def run_resume_optimizer(job_description: str):
-    """Main function to run the resume optimization process with improved agents."""
+    """Main function to run the resume optimization process."""
     try:
         resume_text = extract_text("Dhiraj_Sahu_Resume.pdf")
         print("✅ Successfully loaded resume.")
@@ -137,7 +277,7 @@ def run_resume_optimizer(job_description: str):
         print("❌ Error: Dhiraj_Sahu_Resume.pdf not found.")
         return
 
-    # Improved agent with better prompt for resume parsing
+    # Resume parser agent
     resume_parser_agent = Agent(
         role='Resume Parser',
         goal='Extract all key information from a resume with 100% accuracy',
@@ -149,7 +289,7 @@ def run_resume_optimizer(job_description: str):
         verbose=True
     )
 
-    # Improved agent with better prompt for job description analysis
+    # JD parser agent
     jd_parser_agent = Agent(
         role='JD Analyzer',
         goal='Extract every critical element from a job description with perfect precision',
@@ -162,7 +302,7 @@ def run_resume_optimizer(job_description: str):
         verbose=True
     )
 
-    # Improved agent with better prompt for ATS scoring
+    # ATS scorer agent
     ats_scorer_agent = Agent(
         role='ATS Matcher',
         goal='Calculate precise ATS matching scores with the exact algorithms used by industry-leading ATS systems',
@@ -175,7 +315,7 @@ def run_resume_optimizer(job_description: str):
         verbose=True
     )
 
-    # Improved agent with better prompt for resume optimization
+    # Resume optimizer agent
     resume_optimizer_agent = Agent(
         role='Resume Enhancement Specialist',
         goal='Transform any resume to achieve maximum ATS match while maintaining absolute truthfulness',
@@ -188,32 +328,7 @@ def run_resume_optimizer(job_description: str):
         verbose=True
     )
 
-    # Improved agent with better prompt for LaTeX resume generation
-    resume_latex_agent = Agent(
-        role='LaTeX Resume Designer',
-        goal='Create visually stunning yet ATS-compatible LaTeX resumes',
-        backstory='''You are a document design specialist who combines deep LaTeX expertise with knowledge of ATS parsing algorithms.
-        You've created custom resume templates for over 1,000 successful job seekers across all industries.
-        You understand exactly which LaTeX elements improve readability while maintaining perfect ATS compatibility.
-        Your designs achieve the perfect balance between visual appeal and machine readability.''',
-        tools=[],
-        llm=llm,
-        verbose=True
-    )
-
-    # Improved agent with better prompt for cover letter generation
-    cover_letter_agent = Agent(
-        role='Personalized Cover Letter Writer',
-        goal='Craft compelling, customized cover letters that directly address job requirements',
-        backstory='''You are an award-winning copywriter who specializes in persuasive professional communications.
-        You've helped thousands of professionals secure interviews through perfectly tailored cover letters.
-        Your superpower is connecting candidate experiences directly to employer needs with authentic, compelling narratives.
-        You know exactly how to balance professionalism, personality, and precision for maximum impact.''',
-        tools=[],
-        llm=llm,
-        verbose=True
-    )
-
+    # Define tasks
     task_1 = Task(
         description=f"""
         Parse the following resume with extreme attention to detail, ensuring you extract EVERY piece of relevant information.
@@ -273,7 +388,7 @@ def run_resume_optimizer(job_description: str):
     )
 
     task_3 = Task(
-        description=f"""
+        description="""
         Perform a detailed ATS match analysis between the resume and job description using the exact methods employed by modern Applicant Tracking Systems.
         
         Your analysis must include:
@@ -306,7 +421,7 @@ def run_resume_optimizer(job_description: str):
     )
 
     task_4 = Task(
-        description=f"""
+        description="""
         Optimize the resume to achieve a 90%+ ATS match score while maintaining complete truthfulness and authenticity.
         
         Follow these specific optimization steps:
@@ -319,97 +434,35 @@ def run_resume_optimizer(job_description: str):
         6. SEMANTIC OPTIMIZATION: Replace weak terms with stronger, ATS-friendly alternatives
         
         The output must be a COMPLETE, VALID JSON object with the exact same structure as the original resume JSON:
-        {{
+        {
             "name": candidate name,
             "email": email address,
             "phone": phone number,
             "skills": array of skills (prioritized by relevance),
             "education": array of education entries,
-            "experience": array of objects with {{
+            "experience": array of objects with {
                 "company": company name,
                 "year": employment period,
                 "role": job title,
                 "responsibilities": enhanced descriptions aligned with job requirements
-            }}
-        }}
-        
+            }
+        }
+        There should be all the previous resuume information, but with enhanced, ATS-friendly content. The format for the previous resume must be maintained.
         Any skills or experiences added must be 100% justified by the original resume content - NO FABRICATION allowed.
         """,
-        expected_output='Optimized resume JSON with strategically enhanced content for maximum ATS compatibility',
+        expected_output='Optimized resume JSON with strategically enhanced content for maximum ATS compatibility along with proper format and structure like the original resume',
         agent=resume_optimizer_agent
     )
 
-    task_5 = Task(
-        description=f"""
-        Create a professionally formatted LaTeX resume that is both visually appealing AND fully ATS-compatible.
-        
-        Your LaTeX document must include:
-        
-        1. CLEAN FORMATTING: Professional spacing, alignment, and visual hierarchy
-        2. ATS OPTIMIZATION: Plain text compatibility for parsing systems
-        3. STRATEGIC HIGHLIGHTING: Bold/italic for key terms matching job requirements
-        4. SECTION ORGANIZATION: Clear section headers with consistent formatting
-        5. CONTENT PRIORITIZATION: Most relevant information prominently positioned
-        
-        Use these LaTeX packages and design elements:
-        - geometry package with 1-inch margins
-        - hyperref package with proper color setup
-        - fontawesome5 for contact icons
-        - enumitem for clean bullet formatting
-        - titlesec for customized section headers
-        
-        Structure the document with:
-        - Name and contact centered at top
-        - Clean section headers with subtle styling (underline or color)
-        - Bulleted lists for skills, education, and experience
-        
-        The output must be COMPLETE, VALID LaTeX code ready for compilation without errors.
-        
-        Use the optimized resume JSON from the previous task as your source content.
-        """,
-        expected_output='Professionally formatted, ATS-optimized LaTeX resume with perfect syntax and visual appeal',
-        agent=resume_latex_agent
-    )
-
-    task_6 = Task(
-        description=f"""
-        Create a compelling, personalized cover letter that directly connects the candidate's qualifications to the job requirements.
-        
-        Your cover letter must include:
-        
-        1. PROPER BUSINESS LETTER FORMAT: Complete with date, addresses, and professional closing
-        2. COMPELLING OPENING: Engaging first paragraph that states the position and source
-        3. QUALIFICATION ALIGNMENT: 2-3 paragraphs connecting specific experiences to job requirements
-        4. COMPANY KNOWLEDGE: Reference to company mission, values, or recent achievements
-        5. CONFIDENT CLOSING: Clear call to action and contact information
-        6. ATS OPTIMIZATION: Strategic inclusion of 5-7 key job requirement terms
-        
-        Use these LaTeX elements:
-        - letter document class with proper spacing
-        - address, opening, and closing with correct formatting
-        - hyperref for email/phone linking
-        - professional, persuasive tone throughout
-        
-        The letter should be 250-400 words, professionally formatted, and directly targeted to THIS SPECIFIC job.
-        
-        The output must be COMPLETE, VALID LaTeX code ready for compilation without errors.
-        
-        Use the optimized resume JSON and job description summary from previous tasks.
-        """,
-        expected_output='Customized, compelling LaTeX cover letter that perfectly connects candidate qualifications to job requirements',
-        agent=cover_letter_agent
-    )
-
+    # Create crew and run
     crew = Crew(
         agents=[
             resume_parser_agent,
             jd_parser_agent,
             ats_scorer_agent,
-            resume_optimizer_agent,
-            resume_latex_agent,
-            cover_letter_agent
+            resume_optimizer_agent
         ],
-        tasks=[task_1, task_2, task_3, task_4, task_5, task_6],
+        tasks=[task_1, task_2, task_3, task_4],
         llm=llm,
         verbose=True
     )
@@ -418,29 +471,23 @@ def run_resume_optimizer(job_description: str):
         print("\n🚀 Starting resume optimization process...")
         results = crew.kickoff()
         
-        # Get the task outputs directly
-        resume_parser_output = results.tasks_output[0]  # Task 1 output
-        jd_parser_output = results.tasks_output[1]      # Task 2 output
-        ats_scorer_output = results.tasks_output[2]     # Task 3 output
-        resume_optimizer_output = results.tasks_output[3]  # Task 4 output
-        resume_latex_output = results.tasks_output[4]   # Task 5 output
-        cover_letter_output = results.tasks_output[5]   # Task 6 output
-        
+        # Get the task outputs
+        resume_parser_output = results.tasks_output[0]
+        jd_parser_output = results.tasks_output[1]
+        ats_scorer_output = results.tasks_output[2]
+        resume_optimizer_output = results.tasks_output[3]
 
         print("\n=== Processing Task Outputs ===")
         
-        # Extract optimized resume JSON with improved error handling
+        # Extract optimized resume JSON
         try:
-            # Try to parse as JSON if it's a string
             if isinstance(resume_optimizer_output, str):
-                # Look for JSON object in the string using a more robust pattern
                 json_match = re.search(r'\{(?:[^{}]|(?:\{(?:[^{}]|(?:\{[^{}]*\}))*\}))*\}', resume_optimizer_output, re.DOTALL)
                 if json_match:
                     optimized_resume_json = json.loads(json_match.group(0))
                 else:
                     optimized_resume_json = json.loads(resume_optimizer_output)
             elif hasattr(resume_optimizer_output, 'raw'):
-                # If it's a TaskOutput object
                 raw_data = resume_optimizer_output.raw
                 if isinstance(raw_data, str):
                     json_match = re.search(r'\{(?:[^{}]|(?:\{(?:[^{}]|(?:\{[^{}]*\}))*\}))*\}', raw_data, re.DOTALL)
@@ -449,164 +496,55 @@ def run_resume_optimizer(job_description: str):
                     else:
                         optimized_resume_json = json.loads(raw_data)
                 else:
-                    # Already a dict
                     optimized_resume_json = raw_data
             else:
-                # Assume it's already a dict
                 optimized_resume_json = resume_optimizer_output
                 
-            print(f"✅ Successfully extracted optimized resume JSON")
+            print("✅ Successfully extracted optimized resume JSON")
             
         except (json.JSONDecodeError, AttributeError) as e:
             print(f"⚠️ Error parsing optimized resume JSON: {e}")
-            # Fall back to parsing the initial resume
-            try:
-                if isinstance(resume_parser_output, str):
-                    json_match = re.search(r'\{(?:[^{}]|(?:\{(?:[^{}]|(?:\{[^{}]*\}))*\}))*\}', resume_parser_output, re.DOTALL)
-                    if json_match:
-                        optimized_resume_json = json.loads(json_match.group(0))
-                    else:
-                        optimized_resume_json = json.loads(resume_parser_output)
-                elif hasattr(resume_parser_output, 'raw'):
-                    raw_data = resume_parser_output.raw
-                    if isinstance(raw_data, str):
-                        json_match = re.search(r'\{(?:[^{}]|(?:\{(?:[^{}]|(?:\{[^{}]*\}))*\}))*\}', raw_data, re.DOTALL)
-                        if json_match:
-                            optimized_resume_json = json.loads(json_match.group(0))
-                        else:
-                            optimized_resume_json = json.loads(raw_data)
-                    else:
-                        optimized_resume_json = raw_data
-                else:
-                    optimized_resume_json = resume_parser_output
-                print(f"✅ Using original parsed resume JSON as fallback")
-            except Exception as e2:
-                print(f"⚠️ Error parsing original resume JSON: {e2}")
-                # Create a basic empty resume JSON as last resort
-                optimized_resume_json = {
-                    "name": "Candidate",
-                    "email": "example@email.com",
-                    "phone": "123-456-7890",
-                    "skills": [],
-                    "education": [],
-                    "experience": []
-                }
-                print(f"⚠️ Using empty resume JSON template as last resort")
+            # Fallback to creating a basic resume structure
+            optimized_resume_json = {
+                "name": "Candidate",
+                "email": "example@email.com",
+                "phone": "123-456-7890",
+                "skills": ["Python", "JavaScript", "Problem Solving", "Communication"],
+                "education": ["Bachelor's Degree in Computer Science"],
+                "experience": [{
+                    "company": "Tech Company",
+                    "year": "2020-2023",
+                    "role": "Software Developer",
+                    "responsibilities": "Developed software applications using modern technologies."
+                }]
+            }
+            print("⚠️ Using fallback resume JSON structure")
 
-        # Get resume LaTeX content with improved extraction
-        if isinstance(resume_latex_output, str):
-            resume_latex = resume_latex_output
-        elif hasattr(resume_latex_output, 'raw'):
-            resume_latex = resume_latex_output.raw
-        else:
-            # Generate from JSON if LaTeX output is not available
-            resume_latex = resume_json_to_latex(optimized_resume_json)
-            
-        # Extract LaTeX from task output if it doesn't look like LaTeX
-        if not resume_latex.strip().startswith("\\documentclass"):
-            # Look for LaTeX code with improved pattern
-            latex_match = re.search(r'\\documentclass.*?\\begin\{document\}.*?\\end\{document\}', resume_latex, re.DOTALL)
-            if latex_match:
-                resume_latex = latex_match.group(0)
-            else:
-                # Generate from JSON if LaTeX extraction failed
-                resume_latex = resume_json_to_latex(optimized_resume_json)
-                print("⚠️ Generated LaTeX from JSON as fallback")
-
-        # Get cover letter LaTeX content with improved extraction
-        if isinstance(cover_letter_output, str):
-            cover_letter_latex = cover_letter_output
-        elif hasattr(cover_letter_output, 'raw'):
-            cover_letter_latex = cover_letter_output.raw
-        else:
-            # Create a better cover letter if output is not available
-            company_name = extract_company_name(job_description)
-            cover_letter_latex = f"""\\documentclass{{letter}}
-\\usepackage[margin=1in]{{geometry}}
-\\usepackage{{hyperref}}
-\\usepackage{{fontawesome5}}
-\\usepackage{{color}}
-\\definecolor{{linkcolor}}{{HTML}}{{0066cc}}
-\\hypersetup{{colorlinks=true, linkcolor=linkcolor, urlcolor=linkcolor}}
-
-\\begin{{document}}
-
-\\address{{{optimized_resume_json.get('name', 'Candidate')}\\\\
-{optimized_resume_json.get('email', 'example@email.com')}\\\\
-{optimized_resume_json.get('phone', '123-456-7890')}}}
-
-\\begin{{letter}}{{Hiring Manager\\\\{company_name}}}
-
-\\opening{{Dear Hiring Manager,}}
-
-I am writing to express my interest in the Software Engineer position at {company_name}. With my background in software development and technical expertise, I believe I would be a valuable addition to your team.
-
-My experience aligns well with the requirements outlined in your job posting. I am particularly skilled in problem-solving and collaborative development, with a track record of delivering high-quality solutions.
-
-I am excited about the opportunity to contribute to {company_name}'s innovative work and would welcome the chance to discuss how my skills and experience could benefit your team.
-
-\\closing{{Sincerely,}}
-
-\\end{{letter}}
-\\end{{document}}
-"""
-            print("⚠️ Generated cover letter as fallback")
-            
-        # Extract LaTeX from task output if it doesn't look like LaTeX
-        if not cover_letter_latex.strip().startswith("\\documentclass"):
-            # Look for LaTeX code with improved pattern
-            latex_match = re.search(r'\\documentclass.*?\\begin\{document\}.*?\\end\{document\}', cover_letter_latex, re.DOTALL)
-            if latex_match:
-                cover_letter_latex = latex_match.group(0)
-            else:
-                # Use the improved cover letter template
-                company_name = extract_company_name(job_description)
-                cover_letter_latex = f"""\\documentclass{{letter}}
-\\usepackage[margin=1in]{{geometry}}
-\\usepackage{{hyperref}}
-\\usepackage{{fontawesome5}}
-\\usepackage{{color}}
-\\definecolor{{linkcolor}}{{HTML}}{{0066cc}}
-\\hypersetup{{colorlinks=true, linkcolor=linkcolor, urlcolor=linkcolor}}
-
-\\begin{{document}}
-
-\\address{{{optimized_resume_json.get('name', 'Candidate')}\\\\
-{optimized_resume_json.get('email', 'example@email.com')}\\\\
-{optimized_resume_json.get('phone', '123-456-7890')}}}
-
-\\begin{{letter}}{{Hiring Manager\\\\{company_name}}}
-
-\\opening{{Dear Hiring Manager,}}
-
-I am writing to express my interest in the Software Engineer position at {company_name}. With my background in software development and technical expertise, I believe I would be a valuable addition to your team.
-
-My experience aligns well with the requirements outlined in your job posting. I am particularly skilled in problem-solving and collaborative development, with a track record of delivering high-quality solutions.
-
-I am excited about the opportunity to contribute to {company_name}'s innovative work and would welcome the chance to discuss how my skills and experience could benefit your team.
-
-\\closing{{Sincerely,}}
-
-\\end{{letter}}
-\\end{{document}}
-"""
-                print("⚠️ Generated cover letter from template as fallback")
-
-        # Save outputs
+        # Create output directory
         os.makedirs("output", exist_ok=True)
-        resume_file = os.path.join("output", "Resume.tex")
-        cover_letter_file = os.path.join("output", "Cover_letter.tex")
 
-        # Save the LaTeX files
-        with open(resume_file, "w") as f:
-            f.write(resume_latex)
-        print(f"✅ Saved resume LaTeX: {resume_file}")
+        # Generate PDFs using ReportLab
+        print("\n=== Generating PDFs ===")
+        
+        try:
+            resume_pdf_path = os.path.join("output", "Resume.pdf")
+            if create_resume_pdf(optimized_resume_json, resume_pdf_path):
+                print(f"✅ Successfully created Resume.pdf")
+            else:
+                print(f"⚠️ Failed to create Resume.pdf")
+        except Exception as e:
+            print(f"⚠️ Error creating resume PDF: {e}")
 
-        with open(cover_letter_file, "w") as f:
-            f.write(cover_letter_latex)
-        print(f"✅ Saved cover letter LaTeX: {cover_letter_file}")
+        try:
+            cover_letter_pdf_path = os.path.join("output", "Cover_Letter.pdf")
+            if create_cover_letter_pdf(optimized_resume_json, job_description, cover_letter_pdf_path):
+                print(f"✅ Successfully created Cover_Letter.pdf")
+            else:
+                print(f"⚠️ Failed to create Cover_Letter.pdf")
+        except Exception as e:
+            print(f"⚠️ Error creating cover letter PDF: {e}")
 
-        # Save the ATS score report as JSON
+        # Save ATS report as JSON
         try:
             if isinstance(ats_scorer_output, str):
                 json_match = re.search(r'\{(?:[^{}]|(?:\{(?:[^{}]|(?:\{[^{}]*\}))*\}))*\}', ats_scorer_output, re.DOTALL)
@@ -629,35 +567,21 @@ I am excited about the opportunity to contribute to {company_name}'s innovative 
         except Exception as e:
             print(f"⚠️ Could not save ATS report: {e}")
 
-        # Compile the LaTeX files to PDF
-        print("\n=== Compiling PDFs ===")
-        pdf_success = False
-        
-        # Try to compile resume PDF
-        if compile_latex_to_pdf(resume_file):
-            print(f"✅ Successfully compiled Resume.pdf")
-            pdf_success = True
-        else:
-            print(f"⚠️ Failed to compile Resume.pdf")
-        
-        # Try to compile cover letter PDF
-        if compile_latex_to_pdf(cover_letter_file):
-            print(f"✅ Successfully compiled Cover_letter.pdf")
-            pdf_success = True
-        else:
-            print(f"⚠️ Failed to compile Cover_letter.pdf")
-            
-        if pdf_success:
-            print("\n🎉 Process complete! Check the output directory for your files.")
-        else:
-            print("""
-⚠️ PDF compilation failed. Possible reasons:
-1. pdflatex is not installed on your system
-2. There are errors in the LaTeX code
-3. Required LaTeX packages are missing
+        # Save optimized resume JSON for reference
+        try:
+            resume_json_file = os.path.join("output", "Optimized_Resume.json")
+            with open(resume_json_file, "w") as f:
+                json.dump(optimized_resume_json, f, indent=2)
+            print(f"✅ Saved optimized resume JSON: {resume_json_file}")
+        except Exception as e:
+            print(f"⚠️ Could not save resume JSON: {e}")
 
-You can manually compile the LaTeX files using an online service like Overleaf.
-""")
+        print("\n🎉 Process complete! Check the output directory for your files.")
+        print("📁 Generated files:")
+        print("   • Resume.pdf - Optimized resume")
+        print("   • Cover_Letter.pdf - Customized cover letter")
+        print("   • ATS_Report.json - Detailed ATS analysis")
+        print("   • Optimized_Resume.json - Resume data in JSON format")
 
     except Exception as e:
         print(f"❌ Error during crew execution: {e}")
@@ -667,26 +591,21 @@ You can manually compile the LaTeX files using an online service like Overleaf.
 # Example usage
 if __name__ == '__main__':
     job_description = """
-    Software Engineer at TechCorp
-    
-    We are looking for a talented Software Engineer to join our dynamic team. The ideal candidate will have strong experience in Python development, database management, and web technologies. You will work on designing, developing, and maintaining various software solutions for our clients.
-    
-    Requirements:
-    - Bachelor's degree in Computer Science or related field
-    - 3+ years of experience in software development
-    - Proficiency in Python, JavaScript, and SQL
-    - Experience with web frameworks like Django or Flask
-    - Knowledge of RESTful APIs and microservices
-    - Familiarity with cloud platforms like AWS or Azure
-    - Strong problem-solving and analytical skills
-        - Excellent communication and teamwork skills
-    - Ability to work in a fast-paced environment
+    This is an exciting opportunity for a programmer / engineer with existing experience to build an AI based system for a financial services company. We are looking to bring our compliance and administrative services into the modern era with AI based technology to help us complete tasks such as recommendation letter writing, document formatting, file / error checking and document naming.
 
-    Responsibilities:
-    - Design, develop, and maintain software applications
-    - Collaborate with cross-functional teams to ensure project success
-    - Troubleshoot and debug software issues
-    - Stay up-to-date with emerging technologies and trends
-    - Contribute to the continuous improvement of our development processes
+The role can be remote or hybrid depending.
+
+Job Types: Full-time, Part-time
+
+Pay: £48,045.00-£53,372.00 per year
+
+Expected hours: 10 – 40 per week
+
+Schedule:
+
+Flexitime
+Work Location: Remote
+
+Reference ID: AI based software developer / engineer required
     """
     run_resume_optimizer(job_description)
